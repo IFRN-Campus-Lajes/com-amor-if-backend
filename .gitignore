@@ -10,6 +10,8 @@ target/
 
 /logs
 
+app.log
+
 /node_modules
 
 /logs
