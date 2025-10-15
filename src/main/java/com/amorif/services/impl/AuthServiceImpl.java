@@ -103,51 +103,7 @@ public class AuthServiceImpl implements AuthService {
 		User user = User.builder().matricula(dto.getMatricula()).nome(dto.getNomeUsual()).build();
 		user.setEmail(dto.getEmail());
 
-		// Definindo as roles para setorSuap
-	    Map<String, String> setorSuapRoles = new HashMap<>();
-	    setorSuapRoles.put("ASBIB/LAJ", RoleEnum.ROLE_BIBLIOTECARIO.toString());
-	    setorSuapRoles.put("APAC/LAJ", RoleEnum.ROLE_APOIO_ACADEMICO.toString());
-	    setorSuapRoles.put("ASPED/LAJ", RoleEnum.ROLE_ASSESSORIA_PEDAGOGICA.toString());
-	    setorSuapRoles.put("ASAES/LAJ", RoleEnum.ROLE_ASSISTENCIA_ESTUDANTIL.toString());
-	    setorSuapRoles.put("ASLAB/LAJ", RoleEnum.ROLE_ASSESSORIA_LABORATORIO.toString());
-	    setorSuapRoles.put("COCINF/LAJ", RoleEnum.ROLE_COORDENADOR_CURSO.toString());
-	    setorSuapRoles.put("COCADM/LAJ", RoleEnum.ROLE_COORDENADOR_CURSO.toString());
-	    setorSuapRoles.put("COCOM/LAJ", RoleEnum.ROLE_COORDENADOR_CURSO.toString());
-	    setorSuapRoles.put("ASAC/LAJ", RoleEnum.ROLE_SEAC.toString());
-
-	    // Funções específicas para ADMINISTRADOR
-	    List<String> adminFunctions = Arrays.asList(
-	        "FAG-IFRN - ASGTI/LAJ", "CD0003 - DG/LAJ", "SUB-CHEFIA - DG/LAJ", "CD0004 - DIAC/LAJ"
-	    );
-
-	    // Condições para atribuição de roles
-	    if (dto.getTipoVinculo().contains("Servidor") && !dto.getVinculo().getCategoria().contains("estagiario")) {
-	        // Adicionando roles com base no setorSuap
-	        for (Map.Entry<String, String> entry : setorSuapRoles.entrySet()) {
-	            if (dto.getVinculo().getSetorSuap().contains(entry.getKey())) {
-	                user.getFuncoes().add(this.roleRepository.getByName(entry.getValue()));
-	            }
-	        }
-
-	        // Verificando a categoria para ROLE_COEXPEIN
-	        if (dto.getVinculo().getSetorSuap().contains("COEXPEIN/LAJ")) {
-	            user.getFuncoes().add(this.roleRepository.getByName(RoleEnum.ROLE_COEXPEIN.toString()));
-	        }
-
-	        // Verificando se a função está na lista de administradores
-	        if (adminFunctions.stream().anyMatch(funcao -> Arrays.asList(dto.getVinculo().getFuncao()).contains(funcao))) {
-	            user.getFuncoes().add(this.roleRepository.getByName(RoleEnum.ROLE_ADMINISTRADOR.toString()));
-	        }
-
-	        // Verificando a categoria para adicionar ROLE_DOCENTE
-	        if (dto.getVinculo().getCategoria().contains("docente")) {
-	            user.getFuncoes().add(this.roleRepository.getByName(RoleEnum.ROLE_DOCENTE.toString()));
-	        }
-	    } else {	    	
-	    	// Adiciona ROLE_ALUNO por padrão se não for servidor
-	    	user.getFuncoes().add(this.roleRepository.getByName(RoleEnum.ROLE_ALUNO.toString()));
-	    }
-
+		assignRoles(user, dto);
 
 		this.userRepository.save(user);
 
@@ -266,6 +222,10 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	public AuthenticationDtoResponse authenticate(SUAPUserDtoRequest dto) {
 		User user = this.userRepository.findByMatricula(dto.getMatricula()).orElseThrow();
+		
+		assignRoles(user, dto); // Update the User Roles
+		userRepository.save(user);
+		
 		String token = jwtTokenProvider.getStringAccessToken(user.getMatricula(),
 				user.getFuncoes().stream().map(Role::getName).collect(Collectors.toList()));
 		String refToken = jwtTokenProvider.getStringRefreshToken(user.getMatricula(),
@@ -296,6 +256,52 @@ public class AuthServiceImpl implements AuthService {
 			token.setRevoked(true);
 		}
 		tokenRepository.saveAll(validTokens);
+	}
+	
+	private void assignRoles(User user, SUAPUserDtoRequest dto) {
+		user.getFuncoes().clear();
+		
+		// Definindo as roles para setorSuap
+	    Map<String, String> setorSuapRoles = new HashMap<>();
+	    setorSuapRoles.put("ASBIB/LAJ", RoleEnum.ROLE_BIBLIOTECARIO.toString());
+	    setorSuapRoles.put("APAC/LAJ", RoleEnum.ROLE_APOIO_ACADEMICO.toString());
+	    setorSuapRoles.put("ASPED/LAJ", RoleEnum.ROLE_ASSESSORIA_PEDAGOGICA.toString());
+	    setorSuapRoles.put("ASAES/LAJ", RoleEnum.ROLE_ASSISTENCIA_ESTUDANTIL.toString());
+	    setorSuapRoles.put("ASLAB/LAJ", RoleEnum.ROLE_ASSESSORIA_LABORATORIO.toString());
+	    setorSuapRoles.put("COCINF/LAJ", RoleEnum.ROLE_COORDENADOR_CURSO.toString());
+	    setorSuapRoles.put("COCADM/LAJ", RoleEnum.ROLE_COORDENADOR_CURSO.toString());
+	    setorSuapRoles.put("COCOM/LAJ", RoleEnum.ROLE_COORDENADOR_CURSO.toString());
+	    setorSuapRoles.put("ASAC/LAJ", RoleEnum.ROLE_SEAC.toString());
+	    setorSuapRoles.put("COEXPEIN/LAJ", RoleEnum.ROLE_COEXPEIN.toString());
+	    setorSuapRoles.put("DIAD/LAJ", RoleEnum.ROLE_DIAD.toString());
+
+	    // Funções específicas para ADMINISTRADOR
+	    List<String> adminFunctions = Arrays.asList(
+	        "FAG-IFRN - ASGTI/LAJ", "CD0003 - DG/LAJ", "SUB-CHEFIA - DG/LAJ", "CD0004 - DIAC/LAJ"
+	    );
+
+	    // Condições para atribuição de roles
+	    if (dto.getTipoVinculo().contains("Servidor") && !dto.getVinculo().getCategoria().contains("estagiario")) {
+	        // Adicionando roles com base no setorSuap
+	        for (Map.Entry<String, String> entry : setorSuapRoles.entrySet()) {
+	            if (dto.getVinculo().getSetorSuap().contains(entry.getKey())) {
+	                user.getFuncoes().add(this.roleRepository.getByName(entry.getValue()));
+	            }
+	        }
+
+	        // Verificando se a função está na lista de administradores
+	        if (adminFunctions.stream().anyMatch(funcao -> Arrays.asList(dto.getVinculo().getFuncao()).contains(funcao))) {
+	            user.getFuncoes().add(this.roleRepository.getByName(RoleEnum.ROLE_ADMINISTRADOR.toString()));
+	        }
+
+	        // Verificando a categoria para adicionar ROLE_DOCENTE
+	        if (dto.getVinculo().getCategoria().contains("docente")) {
+	            user.getFuncoes().add(this.roleRepository.getByName(RoleEnum.ROLE_DOCENTE.toString()));
+	        }
+	    } else {	    	
+	    	// Adiciona ROLE_ALUNO por padrão se não for servidor
+	    	user.getFuncoes().add(this.roleRepository.getByName(RoleEnum.ROLE_ALUNO.toString()));
+	    }
 	}
 
 }

@@ -58,7 +58,8 @@ public class ProdConfig implements CommandLineRunner {
 				Role.builder().name(RoleEnum.ROLE_COORDENADOR_CURSO.toString()).build(),
 				Role.builder().name(RoleEnum.ROLE_ASSESSORIA_LABORATORIO.toString()).build(),
 				Role.builder().name(RoleEnum.ROLE_ASSISTENCIA_ESTUDANTIL.toString()).build(),
-				Role.builder().name(RoleEnum.ROLE_SEAC.toString()).build());
+				Role.builder().name(RoleEnum.ROLE_SEAC.toString()).build(),
+				Role.builder().name(RoleEnum.ROLE_DIAD.toString()).build());
 
 		List<Role> rolesParaSalvar = novasRoles.stream().filter(role -> !rolesExistentes.contains(role.getName()))
 				.collect(Collectors.toList());
@@ -147,6 +148,7 @@ public class ProdConfig implements CommandLineRunner {
 		Role assessoriaLaboratorio = roleRepository.getByName("ROLE_ASSESSORIA_LABORATORIO");
 		Role administrador = roleRepository.getByName("ROLE_ADMINISTRADOR");
 		Role seac = roleRepository.getByName("ROLE_SEAC");
+		Role diad = roleRepository.getByName("ROLE_DIAD");
 
 		// População das regras
 		List<String> regrasExistentes = regraRepository.findAll().stream().map(Regra::getDescricao)
@@ -169,9 +171,9 @@ public class ProdConfig implements CommandLineRunner {
 				Regra.builder().descricao("20 pontos por perda de livro").operacao("SUB").valorMinimo(20)
 						.senso(utilizacao).tipoRegra(tipoFixo).roles(Arrays.asList(bibliotecario, administrador))
 						.build(),
-				Regra.builder().descricao("Pontos por atraso de livro (3 pontos por livro atrasado)").operacao("SUB").valorMinimo(3)
-						.senso(utilizacao).tipoRegra(tipoVariavel).roles(Arrays.asList(bibliotecario, administrador))
-						.build(),
+				Regra.builder().descricao("Pontos por atraso de livro (3 pontos por livro atrasado)").operacao("SUB")
+						.valorMinimo(3).senso(utilizacao).tipoRegra(tipoVariavel)
+						.roles(Arrays.asList(bibliotecario, administrador)).build(),
 				Regra.builder().descricao("5 pontos por avaria de livro").operacao("SUB").valorMinimo(5)
 						.senso(utilizacao).tipoRegra(tipoFixo).roles(Arrays.asList(bibliotecario, administrador))
 						.build(),
@@ -239,7 +241,7 @@ public class ProdConfig implements CommandLineRunner {
 				Regra.builder().descricao("20 pontos pela média maior ao do bimestre anterior").operacao("SUM")
 						.grupo("media_comparativa").valorMinimo(20).senso(saude).tipoRegra(tipoFixoPorBimestre)
 						.roles(Arrays.asList(docente, administrador)).build(),
-						
+
 				// Saúde - Assessoria Pedagogica - Positivas
 				Regra.builder().descricao("0 pontos pela frequência menor ao do bimestre anterior").operacao("SUM")
 						.grupo("frequencia_comparativa").valorMinimo(0).senso(saude).tipoRegra(tipoFixoPorBimestre)
@@ -250,8 +252,8 @@ public class ProdConfig implements CommandLineRunner {
 				Regra.builder().descricao("200 pontos pela frequência maior ao do bimestre anterior").operacao("SUM")
 						.grupo("frequencia_comparativa").valorMinimo(200).senso(saude).tipoRegra(tipoFixoPorBimestre)
 						.roles(Arrays.asList(assessoriaPedagogica, administrador)).build(),
-						
-				// Saúde - Docente - Positivas	
+
+				// Saúde - Docente - Positivas
 				Regra.builder().descricao("10 pontos para a turma que mais participou de CAs no bimestre (opcional)")
 						.operacao("SUM").valorMinimo(10).senso(saude).tipoRegra(tipoFixoPorBimestre)
 						.roles(Arrays.asList(docente, administrador)).build(),
@@ -312,6 +314,13 @@ public class ProdConfig implements CommandLineRunner {
 				Regra.builder().descricao("1 ponto por aluno da turma que realizar Caracterização Socioeconômica")
 						.operacao("SUM").valorMinimo(1).senso(saude).tipoRegra(tipoPorAlunoAno)
 						.roles(Arrays.asList(assistenciaEstudantil, administrador)).build(),
+
+				// Saúde - DG, DIAD, DIAC - Positivas
+
+				Regra.builder().descricao("15 a 45 Pontos por Campanhas Educativas Organizadas por Alunos e Autorizadas por Setores Administrativos ou Pedagógicos\r\n"
+						+ "")
+						.operacao("SUM").valorMinimo(15).valorMaximo(45).senso(saude).tipoRegra(tipoVariavel)
+						.roles(Arrays.asList(administrador, diad)).build(),
 
 				// Autodisciplina - Apoio Acadêmico - Positivas
 				Regra.builder().descricao("2 pontos por delação premiada").operacao("SUM").valorMinimo(2)
