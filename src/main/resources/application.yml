@@ -5,17 +5,17 @@ security:
       expire-lenght: 3600000
 spring:
   profiles:
-    active: dev
+    active: prod
   config:
     import: optional:file:.env[.properties]
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: ${DB_URL_DEV}
+    url: ${DB_URL_PROD}
     username: ${DB_USER}
-    password: ${DB_PASSWORD}
+    password: ${DB_PASSWORD_PROD}
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
