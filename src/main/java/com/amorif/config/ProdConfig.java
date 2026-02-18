@@ -293,8 +293,8 @@ public class ProdConfig implements CommandLineRunner {
 						.operacao("SUM").valorMinimo(1).senso(saude).tipoRegra(tipoPorAlunoBimestre)
 						.roles(Arrays.asList(coexpein, administrador)).build(),
 
-				Regra.builder().descricao("5 pontos por premiação de aluno da turma na Expotec do campus")
-						.operacao("SUM").valorMinimo(5).senso(saude).tipoRegra(tipoFixo)
+				Regra.builder().descricao("10 a 140 pontos por premiação da turma na Expotec/Semadec do campus")
+						.operacao("SUM").valorMinimo(10).valorMaximo(140).senso(saude).tipoRegra(tipoVariavel)
 						.roles(Arrays.asList(coexpein, administrador)).build(),
 
 				Regra.builder()
