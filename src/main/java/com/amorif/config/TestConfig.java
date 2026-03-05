@@ -78,7 +78,8 @@ public class TestConfig implements CommandLineRunner {
 		Role r12 = Role.builder().name(RoleEnum.ROLE_ASSESSORIA_LABORATORIO.toString()).build();
 		Role r13 = Role.builder().name(RoleEnum.ROLE_ASSISTENCIA_ESTUDANTIL.toString()).build();
 		Role r14 = Role.builder().name(RoleEnum.ROLE_SEAC.toString()).build();
-		roleRepository.saveAll(Arrays.asList(r1, r2, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14));
+		Role r15 = Role.builder().name(RoleEnum.ROLE_DIAD.toString()).build();
+		roleRepository.saveAll(Arrays.asList(r1, r2, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15));
 
 //		Create User
 		User u1 = User.builder().nome("Teste").matricula("0101").funcoes(Set.of(r14, r8)).build();
@@ -174,6 +175,7 @@ public class TestConfig implements CommandLineRunner {
 		Role assessoriaLaboratorio = roleRepository.getByName("ROLE_ASSESSORIA_LABORATORIO");
 		Role administrador = roleRepository.getByName("ROLE_ADMINISTRADOR");
 		Role seac = roleRepository.getByName("ROLE_SEAC");
+		Role diad = roleRepository.getByName("ROLE_DIAD");
 
 		// População das regras
 		List<Regra> regras = Arrays.asList(
@@ -193,9 +195,9 @@ public class TestConfig implements CommandLineRunner {
 				Regra.builder().descricao("20 pontos por perda de livro").operacao("SUB").valorMinimo(20)
 						.senso(utilizacao).tipoRegra(tipoFixo).roles(Arrays.asList(bibliotecario, administrador))
 						.build(),
-				Regra.builder().descricao("3 pontos por atraso de livro").operacao("SUB").valorMinimo(3)
-						.senso(utilizacao).tipoRegra(tipoFixo).roles(Arrays.asList(bibliotecario, administrador))
-						.build(),
+				Regra.builder().descricao("Pontos por atraso de livro (3 pontos por livro atrasado)").operacao("SUB")
+						.valorMinimo(3).senso(utilizacao).tipoRegra(tipoVariavel)
+						.roles(Arrays.asList(bibliotecario, administrador)).build(),
 				Regra.builder().descricao("5 pontos por avaria de livro").operacao("SUB").valorMinimo(5)
 						.senso(utilizacao).tipoRegra(tipoFixo).roles(Arrays.asList(bibliotecario, administrador))
 						.build(),
@@ -300,7 +302,8 @@ public class TestConfig implements CommandLineRunner {
 				Regra.builder().descricao("1 ponto para a turma por aluno pela elaboração de plano de estudos")
 						.operacao("SUM").valorMinimo(1).senso(saude).tipoRegra(tipoPorAlunoAno)
 						.roles(Arrays.asList(assessoriaPedagogica, administrador)).build(),
-				Regra.builder().descricao("10 pontos para a turma com maior participação nos Conselhos de Classe do bimestre")
+				Regra.builder()
+						.descricao("10 pontos para a turma com maior participação nos Conselhos de Classe do bimestre")
 						.operacao("SUM").valorMinimo(10).senso(saude).tipoRegra(tipoFixoPorBimestre)
 						.roles(Arrays.asList(assessoriaPedagogica, administrador)).build(),
 				Regra.builder().descricao(
@@ -323,6 +326,13 @@ public class TestConfig implements CommandLineRunner {
 								"2 pontos por participação do aluno da turma em eventos científicos externos ao campus")
 						.operacao("SUM").valorMinimo(2).senso(saude).tipoRegra(tipoFixo)
 						.roles(Arrays.asList(coexpein, administrador)).build(),
+
+				// Saúde - DG, DIAD e DIAC - Positivas
+				Regra.builder()
+						.descricao(
+								"15 a 45 Pontos por Campanhas Educativas Organizadas por Alunos e Autorizadas por Setores Administrativos ou Pedagógicos")
+						.operacao("SUM").valorMinimo(15).valorMaximo(45).senso(saude).tipoRegra(tipoVariavel)
+						.roles(Arrays.asList(administrador, diad)).build(),
 
 				// Autodisciplina - Apoio Acadêmico - Positivas
 				Regra.builder().descricao("2 pontos por delação premiada").operacao("SUM").valorMinimo(2)

@@ -1,5 +1,6 @@
-# Usar a imagem do OpenJDK 21 (Java 21)
-FROM openjdk:21-jdk-slim
+# Usar a imagem do JDK 21 (Java 21)
+FROM eclipse-temurin:21-jdk-jammy
+
 # Define o diretório de trabalho dentro do contêiner
 WORKDIR /app
 
