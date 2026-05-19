@@ -264,14 +264,14 @@ public class AuthServiceImpl implements AuthService {
 		// Definindo as roles para setorSuap
 	    Map<String, String> setorSuapRoles = new HashMap<>();
 	    setorSuapRoles.put("ASBIB/LAJ", RoleEnum.ROLE_BIBLIOTECARIO.toString());
-	    setorSuapRoles.put("APAC/LAJ", RoleEnum.ROLE_APOIO_ACADEMICO.toString());
+	    setorSuapRoles.put("COADESC/LAJ", RoleEnum.ROLE_APOIO_ACADEMICO.toString());
 	    setorSuapRoles.put("ASPED/LAJ", RoleEnum.ROLE_ASSESSORIA_PEDAGOGICA.toString());
-	    setorSuapRoles.put("ASAES/LAJ", RoleEnum.ROLE_ASSISTENCIA_ESTUDANTIL.toString());
-	    setorSuapRoles.put("ASLAB/LAJ", RoleEnum.ROLE_ASSESSORIA_LABORATORIO.toString());
+	    setorSuapRoles.put("COAES/LAJ", RoleEnum.ROLE_ASSISTENCIA_ESTUDANTIL.toString());
+	    setorSuapRoles.put("COLAB/LAJ", RoleEnum.ROLE_ASSESSORIA_LABORATORIO.toString());
 	    setorSuapRoles.put("COCINF/LAJ", RoleEnum.ROLE_COORDENADOR_CURSO.toString());
 	    setorSuapRoles.put("COCADM/LAJ", RoleEnum.ROLE_COORDENADOR_CURSO.toString());
 	    setorSuapRoles.put("COCOM/LAJ", RoleEnum.ROLE_COORDENADOR_CURSO.toString());
-	    setorSuapRoles.put("ASAC/LAJ", RoleEnum.ROLE_SEAC.toString());
+	    setorSuapRoles.put("CRA/LAJ", RoleEnum.ROLE_SEAC.toString());
 	    setorSuapRoles.put("COPEIN/LAJ", RoleEnum.ROLE_COEXPEIN.toString());
 		setorSuapRoles.put("COEX/LAJ", RoleEnum.ROLE_COEXPEIN.toString());
 	    setorSuapRoles.put("DIAD/LAJ", RoleEnum.ROLE_DIAD.toString());
