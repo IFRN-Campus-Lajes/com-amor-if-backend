@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: ${DB_URL_DEV}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+logging:
+  level:
+    "[org.springframework.data.web]": DEBUG
+    "[org.hibernate]": TRACE
+    "[org.springframework.boot]": DEBUG
+    "[org.postgresql]": DEBUG

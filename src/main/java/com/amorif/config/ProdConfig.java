@@ -317,10 +317,17 @@ public class ProdConfig implements CommandLineRunner {
 
 				// Saúde - DG, DIAD, DIAC - Positivas
 
-				Regra.builder().descricao("15 a 45 Pontos por Campanhas Educativas Organizadas por Alunos e Autorizadas por Setores Administrativos ou Pedagógicos\r\n"
-						+ "")
+				Regra.builder().descricao(
+						"15 a 45 Pontos por Campanhas Educativas Organizadas por Alunos e Autorizadas por Setores Administrativos ou Pedagógicos\r\n"
+								+ "")
 						.operacao("SUM").valorMinimo(15).valorMaximo(45).senso(saude).tipoRegra(tipoVariavel)
 						.roles(Arrays.asList(administrador, diad)).build(),
+
+				// Saúde - DG, DIAC - Positivas
+
+				Regra.builder().descricao("[TURBO] 15 a 100 Pontos por Campanhas Educativas\r\n" + "").operacao("SUM")
+						.valorMinimo(15).valorMaximo(100).senso(saude).tipoRegra(tipoVariavel)
+						.roles(Arrays.asList(administrador)).build(),
 
 				// Autodisciplina - Apoio Acadêmico - Positivas
 				Regra.builder().descricao("2 pontos por delação premiada").operacao("SUM").valorMinimo(2)
@@ -337,7 +344,7 @@ public class ProdConfig implements CommandLineRunner {
 						.senso(autodisciplina).tipoRegra(tipoVariavel)
 						.roles(Arrays.asList(apoioAcademico, seac, administrador)).build(),
 
-				// Autodisciplina - Coordenador de Curso e Assessoria Pedagógica - Negativas
+				// Autodisciplina - Coordenador de Curso e Assessoria Pedagógica - Positiva
 				Regra.builder().descricao("0 a 15 pontos por bimestre por campanha de conscientização realizada")
 						.operacao("SUM").valorMinimo(0).valorMaximo(15).senso(autodisciplina)
 						.tipoRegra(tipoVariavelBimestre)

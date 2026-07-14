@@ -64,6 +64,7 @@ public class TestConfig implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
+		
 //		Create Roles
 		Role r1 = Role.builder().name(RoleEnum.ROLE_ADMINISTRADOR.toString()).build();
 		Role r2 = Role.builder().name(RoleEnum.ROLE_AVAL.toString()).build();
@@ -328,11 +329,16 @@ public class TestConfig implements CommandLineRunner {
 						.roles(Arrays.asList(coexpein, administrador)).build(),
 
 				// Saúde - DG, DIAD e DIAC - Positivas
-				Regra.builder()
-						.descricao(
-								"15 a 45 Pontos por Campanhas Educativas Organizadas por Alunos e Autorizadas por Setores Administrativos ou Pedagógicos")
+				Regra.builder().descricao(
+						"15 a 45 Pontos por Campanhas Educativas Organizadas por Alunos e Autorizadas por Setores Administrativos ou Pedagógicos")
 						.operacao("SUM").valorMinimo(15).valorMaximo(45).senso(saude).tipoRegra(tipoVariavel)
 						.roles(Arrays.asList(administrador, diad)).build(),
+
+				// Saúde - DG, DIAC - Positivas
+
+				Regra.builder().descricao("[TURBO] 15 a 100 Pontos por Campanhas Educativas\r\n" + "").operacao("SUM")
+						.valorMinimo(15).valorMaximo(100).senso(saude).tipoRegra(tipoVariavel)
+						.roles(Arrays.asList(administrador)).build(),
 
 				// Autodisciplina - Apoio Acadêmico - Positivas
 				Regra.builder().descricao("2 pontos por delação premiada").operacao("SUM").valorMinimo(2)
@@ -349,7 +355,7 @@ public class TestConfig implements CommandLineRunner {
 						.senso(autodisciplina).tipoRegra(tipoVariavel)
 						.roles(Arrays.asList(apoioAcademico, seac, administrador)).build(),
 
-				// Autodisciplina - Coordenador de Curso e Assessoria Pedagógica - Negativas
+				// Autodisciplina - Coordenador de Curso e Assessoria Pedagógica - Positiva
 				Regra.builder().descricao("0 a 15 pontos por bimestre por campanha de conscientização realizada")
 						.operacao("SUM").valorMinimo(0).valorMaximo(15).senso(autodisciplina)
 						.tipoRegra(tipoVariavelBimestre)

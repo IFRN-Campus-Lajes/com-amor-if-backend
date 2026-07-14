@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: ${DB_URL_PROD}
+    password: ${DB_PASSWORD_PROD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+logging:
+  level:
+    "[org.springframework.data.web]": DEBUG
+    "[org.hibernate]": DEBUG
+    "[org.postgresql]": DEBUG
