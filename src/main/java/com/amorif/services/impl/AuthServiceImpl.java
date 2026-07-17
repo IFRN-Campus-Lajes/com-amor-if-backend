@@ -278,7 +278,7 @@ public class AuthServiceImpl implements AuthService {
 
 	    // Funções específicas para ADMINISTRADOR
 	    List<String> adminFunctions = Arrays.asList(
-	        "FG0002 - COTIC/LAJ", "CD0002 - DG/LAJ", "SUB-CHEFIA - DG/LAJ", "CD0004 - DIAC/LAJ"
+	        "FG0002 - COTIC/LAJ", "CD2 - DG/LAJ", "SUB-CHEFIA - DG/LAJ", "CD0004 - DIAC/LAJ"
 	    );
 
 	    // Condições para atribuição de roles
