@@ -50,7 +50,7 @@ class RegraCategoriasTest {
     }
 
     @Test
-    void agrupaAtividadesDeParticipacaoForaDoDesempenhoRegular() {
+    void separaAtividadesExtracurricularesDeRegrasGerais() {
         Senso saude = Senso.builder().descricao("Saúde").build();
         List<Regra> regras = List.of(
                 Regra.builder().descricao("2 pontos por aluno participante de olimpíada").senso(saude).build(),
@@ -63,6 +63,11 @@ class RegraCategoriasTest {
 
         RegraCategorias.aplicar(regras);
 
-        assertThat(regras).allMatch(regra -> "Atividades extracurriculares".equals(regra.getCategoria()));
+        assertThat(regras).extracting(Regra::getCategoria).containsExactly(
+                "Atividades extracurriculares",
+                "Atividades extracurriculares",
+                "Outros",
+                "Outros",
+                "Atividades extracurriculares");
     }
 }
