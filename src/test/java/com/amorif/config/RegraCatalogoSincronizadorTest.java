@@ -45,7 +45,7 @@ class RegraCatalogoSincronizadorTest {
         assertThat(alteradas).containsExactly(existente);
         assertThat(existente.getId()).isEqualTo(43L);
         assertThat(existente.getTipoRegra()).isSameAs(tipoBimestral);
-        assertThat(existente.getDescricao()).startsWith("[TURBO]");
+        assertThat(existente.getDescricao()).doesNotContain("[TURBO]");
     }
 
     @Test
@@ -92,6 +92,7 @@ class RegraCatalogoSincronizadorTest {
 
         assertThat(alteradas).containsExactly(existente);
         assertThat(existente.getId()).isEqualTo(46L);
+        assertThat(existente.getDescricao()).isEqualTo("50 a 300 pontos por divulgação dos processos seletivos");
     }
 
     @Test

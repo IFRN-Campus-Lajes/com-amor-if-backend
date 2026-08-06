@@ -33,7 +33,7 @@ class RegraCategoriasTest {
     }
 
     @Test
-    void preservaMarcadoresDeGamificacaoEValoresVariaveis() {
+    void removeMarcadorVisualDeGamificacaoEPreservaValoresVariaveis() {
         Regra turbo = Regra.builder()
                 .descricao("[TURBO] 15 a 100 Pontos por Campanhas Educativas")
                 .senso(Senso.builder().descricao("Saúde").build())
@@ -45,7 +45,24 @@ class RegraCategoriasTest {
 
         RegraCategorias.aplicar(List.of(turbo, variavel));
 
-        assertThat(turbo.getDescricao()).startsWith("[TURBO]");
+        assertThat(turbo.getDescricao()).isEqualTo("50 a 300 pontos por divulgação dos processos seletivos");
         assertThat(variavel.getDescricao()).contains("X pontos");
+    }
+
+    @Test
+    void agrupaAtividadesDeParticipacaoForaDoDesempenhoRegular() {
+        Senso saude = Senso.builder().descricao("Saúde").build();
+        List<Regra> regras = List.of(
+                Regra.builder().descricao("2 pontos por aluno participante de olimpíada").senso(saude).build(),
+                Regra.builder().descricao("1 ponto por aluno monitor no bimestre").senso(saude).build(),
+                Regra.builder().descricao("1 ponto por aluno com plano de estudos").senso(saude).build(),
+                Regra.builder().descricao("40 pontos por mais de 75% de responsáveis presentes na reunião")
+                        .senso(saude).build(),
+                Regra.builder().descricao("10 pontos para a turma com maior participação no Conselho de Classe")
+                        .senso(saude).build());
+
+        RegraCategorias.aplicar(regras);
+
+        assertThat(regras).allMatch(regra -> "Atividades extracurriculares".equals(regra.getCategoria()));
     }
 }
