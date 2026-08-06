@@ -1,0 +1,51 @@
+package com.amorif.config;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+
+import com.amorif.entities.Regra;
+import com.amorif.entities.Senso;
+
+class RegraCategoriasTest {
+
+    @Test
+    void aplicaCategoriasSemModificarOGrupoDeExclusividade() {
+        Regra regraDeMedia = Regra.builder()
+                .descricao("8 pontos pela média igual ao do bimestre anterior")
+                .grupo("media_comparativa")
+                .senso(Senso.builder().descricao("Saúde").build())
+                .build();
+        Regra regraDeLivro = Regra.builder()
+                .descricao("Pontos por livro emprestado (1 ponto por livro)")
+                .senso(Senso.builder().descricao("Utilização").build())
+                .build();
+
+        RegraCategorias.aplicar(List.of(regraDeMedia, regraDeLivro));
+
+        assertThat(regraDeMedia.getCategoria()).isEqualTo("Desempenho acadêmico");
+        assertThat(regraDeMedia.getGrupo()).isEqualTo("media_comparativa");
+        assertThat(regraDeLivro.getDescricao()).isEqualTo("1 ponto por livro emprestado");
+        assertThat(regraDeLivro.getCategoria()).isEqualTo("Acervo e empréstimos");
+        assertThat(regraDeLivro.getGrupo()).isNull();
+    }
+
+    @Test
+    void preservaMarcadoresDeGamificacaoEValoresVariaveis() {
+        Regra turbo = Regra.builder()
+                .descricao("[TURBO] 15 a 100 Pontos por Campanhas Educativas")
+                .senso(Senso.builder().descricao("Saúde").build())
+                .build();
+        Regra variavel = Regra.builder()
+                .descricao("Pontos por trapaça")
+                .senso(Senso.builder().descricao("Utilização").build())
+                .build();
+
+        RegraCategorias.aplicar(List.of(turbo, variavel));
+
+        assertThat(turbo.getDescricao()).startsWith("[TURBO]");
+        assertThat(variavel.getDescricao()).contains("X pontos");
+    }
+}

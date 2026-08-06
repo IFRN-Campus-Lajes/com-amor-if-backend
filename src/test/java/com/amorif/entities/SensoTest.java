@@ -35,7 +35,7 @@ class SensoTest {
         assertThat(senso.getDescricao()).isEqualTo("Senso de Teste");
         assertThat(senso.getRegras()).isNotNull();
         assertThat(senso.getRegras()).hasSize(1);
-        assertThat(senso.getRegras().get(0).getDescricao()).isEqualTo("Regra 1");
+        assertThat(senso.getRegras().get(0).getDescricao()).isEqualTo("Regra de Teste 1");
     }
 
     @Test
@@ -45,7 +45,7 @@ class SensoTest {
         senso.getRegras().add(regra2);
 
         assertThat(senso.getRegras()).hasSize(2);
-        assertThat(senso.getRegras().get(1).getDescricao()).isEqualTo("Regra 2");
+        assertThat(senso.getRegras().get(1).getDescricao()).isEqualTo("Regra de Teste 2");
     }
 
     @Test

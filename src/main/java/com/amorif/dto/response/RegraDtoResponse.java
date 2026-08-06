@@ -19,14 +19,15 @@ public class RegraDtoResponse implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	private Long id;
+    private Long id;
     private String descricao;
+    private String categoria;
     private Senso senso;
 
     // getters e setters
 
     public static RegraDtoResponse fromRegra(Regra regra) {
-        return new RegraDtoResponse(regra.getId(), regra.getDescricao(), regra.getSenso());
+        return new RegraDtoResponse(regra.getId(), regra.getDescricao(), regra.getCategoria(), regra.getSenso());
     }
 
 }

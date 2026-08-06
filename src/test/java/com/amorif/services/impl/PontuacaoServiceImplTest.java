@@ -335,6 +335,7 @@ public class PontuacaoServiceImplTest {
 		TipoRegra tr2 = TipoRegra.builder().id(1L).fixo(true).frequencia(FrequenciaRegraEnum.BIMESTRAL.ordinal())
 				.temAluno(false).build();
 		regra.setTipoRegra(tr2);
+		regra.setCategoria("Avaliação da organização");
 		regra.setValorMinimo(10);
 		dtoRequest.setBimestre(0);
 		dtoRequest.setPontos(10);
@@ -346,6 +347,7 @@ public class PontuacaoServiceImplTest {
 
 		// Verifica se o método do repositório foi chamado com os parâmetros corretos
 		verify(pontuacaoRepository).existsByBimesterAndRule(0, regra.getId(), turma.getId());
+		verify(pontuacaoRepository, never()).existsByBimesterAndGroup(anyInt(), anyLong(), anyString(), any());
 	}
 
 	@Test
