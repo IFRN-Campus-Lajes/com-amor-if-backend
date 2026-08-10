@@ -106,7 +106,9 @@ public class ProdConfig implements CommandLineRunner {
 				TipoRegra.builder().descricao("Valor Variável").fixo(false).temAluno(false)
 						.frequencia(FrequenciaRegraEnum.AVULSO.ordinal()).build(),
 				TipoRegra.builder().descricao("Valor Fixo por bimestre").fixo(true).temAluno(false)
-						.frequencia(FrequenciaRegraEnum.BIMESTRAL.ordinal()).build());
+						.frequencia(FrequenciaRegraEnum.BIMESTRAL.ordinal()).build(),
+				TipoRegra.builder().descricao("Valor Variável por turno").fixo(false).temAluno(false)
+						.frequencia(FrequenciaRegraEnum.AVULSO.ordinal()).porTurno(true).build());
 
 		List<TipoRegra> tiposParaSalvar = novosTipos.stream()
 				.filter(tipo -> !tiposExistentes.contains(tipo.getDescricao())).collect(Collectors.toList());
@@ -135,6 +137,7 @@ public class ProdConfig implements CommandLineRunner {
 		TipoRegra tipoPorAlunoAno = tipoRegraRepository.findByDescricao("Valor Fixo por aluno por ano letivo");
 		TipoRegra tipoVariavel = tipoRegraRepository.findByDescricao("Valor Variável");
 		TipoRegra tipoFixoPorBimestre = tipoRegraRepository.findByDescricao("Valor Fixo por bimestre");
+		TipoRegra tipoVariavelPorTurno = tipoRegraRepository.findByDescricao("Valor Variável por turno");
 
 		// Obter instâncias de Role
 		Role bibliotecario = roleRepository.getByName("ROLE_BIBLIOTECARIO");
@@ -200,7 +203,7 @@ public class ProdConfig implements CommandLineRunner {
 
 				// Ordenação - Assistência Estudantil, Apoio Acadêmico e ASLAB - Negativas
 				Regra.builder().descricao("10 pontos por desordem para todas as turmas do turno").operacao("SUB")
-						.valorMinimo(10).valorMaximo(50).senso(ordenacao).tipoRegra(tipoVariavel)
+						.valorMinimo(10).valorMaximo(50).senso(ordenacao).tipoRegra(tipoVariavelPorTurno)
 						.roles(Arrays.asList(assistenciaEstudantil, apoioAcademico, assessoriaLaboratorio,
 								administrador))
 						.build(),

@@ -142,8 +142,10 @@ public class TestConfig implements CommandLineRunner {
 				.frequencia(FrequenciaRegraEnum.AVULSO.ordinal()).build();
 		TipoRegra tipo9 = TipoRegra.builder().descricao("Valor Fixo por bimestre").fixo(true).temAluno(false)
 				.frequencia(FrequenciaRegraEnum.BIMESTRAL.ordinal()).build();
+		TipoRegra tipo10 = TipoRegra.builder().descricao("Valor Variável por turno").fixo(false).temAluno(false)
+				.frequencia(FrequenciaRegraEnum.AVULSO.ordinal()).porTurno(true).build();
 
-		tipoRegraRepository.saveAll(Arrays.asList(tipo1, tipo2, tipo3, tipo4, tipo5, tipo6, tipo7, tipo8, tipo9));
+		tipoRegraRepository.saveAll(Arrays.asList(tipo1, tipo2, tipo3, tipo4, tipo5, tipo6, tipo7, tipo8, tipo9, tipo10));
 
 		// População de regras
 		// Obter instâncias de Senso
@@ -164,6 +166,7 @@ public class TestConfig implements CommandLineRunner {
 		TipoRegra tipoPorAlunoAno = tipoRegraRepository.findByDescricao("Valor Fixo por aluno por ano letivo");
 		TipoRegra tipoVariavel = tipoRegraRepository.findByDescricao("Valor Variável");
 		TipoRegra tipoFixoPorBimestre = tipoRegraRepository.findByDescricao("Valor Fixo por bimestre");
+		TipoRegra tipoVariavelPorTurno = tipoRegraRepository.findByDescricao("Valor Variável por turno");
 
 		// Obter instâncias de Role
 		Role bibliotecario = roleRepository.getByName("ROLE_BIBLIOTECARIO");
@@ -227,7 +230,7 @@ public class TestConfig implements CommandLineRunner {
 
 				// Ordenação - Assistência Estudantil, Apoio Acadêmico e ASLAB - Negativas
 				Regra.builder().descricao("10 pontos por desordem para todas as turmas do turno").operacao("SUB")
-						.valorMinimo(10).valorMaximo(50).senso(ordenacao).tipoRegra(tipoVariavel)
+						.valorMinimo(10).valorMaximo(50).senso(ordenacao).tipoRegra(tipoVariavelPorTurno)
 						.roles(Arrays.asList(assistenciaEstudantil, apoioAcademico, assessoriaLaboratorio,
 								administrador))
 						.build(),
@@ -371,6 +374,14 @@ public class TestConfig implements CommandLineRunner {
 				.descricao("5 pontos por aluno da turma por atuação em núcleo do campus, a cada bimestre")
 				.operacao("SUM").valorMinimo(5).senso(saude).tipoRegra(tipoPorAlunoBimestre)
 				.roles(Arrays.asList(coexpein, administrador)).build());
+
+		// Mantidas ao final para preservar os índices das pontuações de demonstração.
+		regras.add(Regra.builder().descricao("1 ponto por aluno da turma que realizar Avaliação Biomédica de Saúde")
+				.operacao("SUM").valorMinimo(2).senso(saude).tipoRegra(tipoPorAlunoAno)
+				.roles(Arrays.asList(assistenciaEstudantil, administrador)).build());
+		regras.add(Regra.builder().descricao("1 ponto por aluno da turma que realizar Caracterização Socioeconômica")
+				.operacao("SUM").valorMinimo(1).senso(saude).tipoRegra(tipoPorAlunoAno)
+				.roles(Arrays.asList(assistenciaEstudantil, administrador)).build());
 
 		RegraCategorias.aplicar(regras);
 		regraRepository.saveAll(regras);

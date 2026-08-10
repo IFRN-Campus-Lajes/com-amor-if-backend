@@ -430,6 +430,27 @@ public class PontuacaoServiceImplTest {
 	}
 
 	@Test
+	public void testThrowPoints_VariablePerTurn_ShouldRegisterValueForEveryClass() {
+		User userWithPermission = new User("user", "password",
+				Collections.singleton(new SimpleGrantedAuthority("ROLE_APOIO_ACADEMICO")));
+		SecurityContextHolder.getContext().setAuthentication(
+				new UsernamePasswordAuthenticationToken(userWithPermission, null, userWithPermission.getAuthorities()));
+
+		TipoRegra tipoVariavelPorTurno = TipoRegra.builder().id(10L).fixo(false)
+				.frequencia(FrequenciaRegraEnum.AVULSO.ordinal()).porTurno(true).build();
+		regra.setTipoRegra(tipoVariavelPorTurno);
+		regra.setValorMinimo(10);
+		regra.setValorMaximo(50);
+		dtoRequest.setPontos(37);
+		dtoRequest.setTurno(TurnoEnum.MATUTINO.ordinal());
+
+		List<PontuacaoDtoResponse> response = pontuacaoService.throwPoints(dtoRequest);
+
+		assertEquals(2, response.size());
+		response.forEach(pontuacao -> assertEquals(37, pontuacao.getPontos()));
+	}
+
+	@Test
 	public void testThrowPoints_PerTurn_ShouldNotRegisterPoints() {
 		// Mockando o contexto de segurança com uma role que permite o lançamento
 		User userWithPermission = new User("user", "password",
