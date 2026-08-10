@@ -49,6 +49,34 @@ class RegraCatalogoSincronizadorTest {
     }
 
     @Test
+    void tornaPunicaoPorMauComportamentoAvulsaSemRecriarARegra() {
+        Senso saude = Senso.builder().id(2L).descricao("Saúde").build();
+        TipoRegra variavelBimestral = TipoRegra.builder().id(3L)
+                .descricao("Valor Variável por bimestre").frequencia(1).build();
+        TipoRegra variavelAvulsa = TipoRegra.builder().id(4L)
+                .descricao("Valor Variável").frequencia(2).build();
+        Regra existente = Regra.builder().id(48L)
+                .descricao("0 a 15 pontos por bimestre por mau comportamento")
+                .operacao("SUB").valorMinimo(0).valorMaximo(15)
+                .senso(saude).tipoRegra(variavelBimestral).roles(roles).build();
+        Regra canonica = Regra.builder()
+                .descricao("0 a 15 pontos por bimestre por mau comportamento")
+                .operacao("SUB").valorMinimo(0).valorMaximo(15)
+                .senso(saude).tipoRegra(variavelAvulsa).roles(roles).build();
+        RegraCategorias.aplicar(List.of(canonica));
+
+        List<Regra> alteradas = RegraCatalogoSincronizador.sincronizar(
+                List.of(existente), List.of(canonica));
+
+        assertThat(alteradas).containsExactly(existente);
+        assertThat(existente.getId()).isEqualTo(48L);
+        assertThat(existente.getTipoRegra()).isSameAs(variavelAvulsa);
+        assertThat(existente.getOperacao()).isEqualTo("SUB");
+        assertThat(existente.getValorMinimo()).isZero();
+        assertThat(existente.getValorMaximo()).isEqualTo(15);
+    }
+
+    @Test
     void mudancaDeValorAtualizaMesmoRegistro() {
         Senso saude = Senso.builder().id(2L).descricao("Saúde").build();
         Regra existente = Regra.builder().id(44L)

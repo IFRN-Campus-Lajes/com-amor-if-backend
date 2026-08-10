@@ -286,7 +286,7 @@ public class TestConfig implements CommandLineRunner {
 
 				// Saúde - Docente - Negativas
 				Regra.builder().descricao("0 a 15 pontos por bimestre por mau comportamento").operacao("SUB")
-						.valorMinimo(0).valorMaximo(15).senso(saude).tipoRegra(tipoVariavelBimestre)
+						.valorMinimo(0).valorMaximo(15).senso(saude).tipoRegra(tipoVariavel)
 						.roles(Arrays.asList(docente, administrador)).build(),
 
 				// Saúde - Coordenação de Curso - Positivas
