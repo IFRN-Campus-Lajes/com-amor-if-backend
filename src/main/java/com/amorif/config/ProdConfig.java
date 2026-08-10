@@ -106,7 +106,9 @@ public class ProdConfig implements CommandLineRunner {
 				TipoRegra.builder().descricao("Valor Variável").fixo(false).temAluno(false)
 						.frequencia(FrequenciaRegraEnum.AVULSO.ordinal()).build(),
 				TipoRegra.builder().descricao("Valor Fixo por bimestre").fixo(true).temAluno(false)
-						.frequencia(FrequenciaRegraEnum.BIMESTRAL.ordinal()).build());
+						.frequencia(FrequenciaRegraEnum.BIMESTRAL.ordinal()).build(),
+				TipoRegra.builder().descricao("Valor Variável por turno").fixo(false).temAluno(false)
+						.frequencia(FrequenciaRegraEnum.AVULSO.ordinal()).porTurno(true).build());
 
 		List<TipoRegra> tiposParaSalvar = novosTipos.stream()
 				.filter(tipo -> !tiposExistentes.contains(tipo.getDescricao())).collect(Collectors.toList());
@@ -135,6 +137,7 @@ public class ProdConfig implements CommandLineRunner {
 		TipoRegra tipoPorAlunoAno = tipoRegraRepository.findByDescricao("Valor Fixo por aluno por ano letivo");
 		TipoRegra tipoVariavel = tipoRegraRepository.findByDescricao("Valor Variável");
 		TipoRegra tipoFixoPorBimestre = tipoRegraRepository.findByDescricao("Valor Fixo por bimestre");
+		TipoRegra tipoVariavelPorTurno = tipoRegraRepository.findByDescricao("Valor Variável por turno");
 
 		// Obter instâncias de Role
 		Role bibliotecario = roleRepository.getByName("ROLE_BIBLIOTECARIO");
@@ -151,8 +154,7 @@ public class ProdConfig implements CommandLineRunner {
 		Role diad = roleRepository.getByName("ROLE_DIAD");
 
 		// População das regras
-		List<String> regrasExistentes = regraRepository.findAll().stream().map(Regra::getDescricao)
-				.collect(Collectors.toList());
+		List<Regra> regrasExistentes = regraRepository.findAll();
 
 		List<Regra> novasRegras = Arrays.asList(
 				// Utilização - Bibliotecário - Positivas
@@ -164,7 +166,7 @@ public class ProdConfig implements CommandLineRunner {
 						.build(),
 				Regra.builder().descricao(
 						"20 pontos no bimestre extra para a turma que mais tiver formado grupos de estudo no ano letivo")
-						.operacao("SUM").valorMinimo(20).senso(utilizacao).tipoRegra(tipoFixoBimestreExtra)
+						.operacao("SUM").valorMinimo(20).senso(utilizacao).tipoRegra(tipoFixoPorBimestre)
 						.roles(Arrays.asList(bibliotecario, administrador)).build(),
 
 				// Utilização - Bibliotecário - Negativas
@@ -201,7 +203,7 @@ public class ProdConfig implements CommandLineRunner {
 
 				// Ordenação - Assistência Estudantil, Apoio Acadêmico e ASLAB - Negativas
 				Regra.builder().descricao("10 pontos por desordem para todas as turmas do turno").operacao("SUB")
-						.valorMinimo(10).senso(ordenacao).tipoRegra(tipoPorTurno)
+						.valorMinimo(10).valorMaximo(50).senso(ordenacao).tipoRegra(tipoVariavelPorTurno)
 						.roles(Arrays.asList(assistenciaEstudantil, apoioAcademico, assessoriaLaboratorio,
 								administrador))
 						.build(),
@@ -260,7 +262,7 @@ public class ProdConfig implements CommandLineRunner {
 
 				// Saúde - Docente - Negativas
 				Regra.builder().descricao("0 a 15 pontos por bimestre por mau comportamento").operacao("SUB")
-						.valorMinimo(0).valorMaximo(15).senso(saude).tipoRegra(tipoVariavelBimestre)
+						.valorMinimo(0).valorMaximo(15).senso(saude).tipoRegra(tipoVariavel)
 						.roles(Arrays.asList(docente, administrador)).build(),
 
 				// Saúde - Coordenação de Curso - Positivas
@@ -308,7 +310,7 @@ public class ProdConfig implements CommandLineRunner {
 				// Saúde - ASAES - Positivas
 
 				Regra.builder().descricao("1 ponto por aluno da turma que realizar Avaliação Biomédica de Saúde")
-						.operacao("SUM").valorMinimo(1).senso(saude).tipoRegra(tipoPorAlunoAno)
+						.operacao("SUM").valorMinimo(2).senso(saude).tipoRegra(tipoPorAlunoAno)
 						.roles(Arrays.asList(assistenciaEstudantil, administrador)).build(),
 
 				Regra.builder().descricao("1 ponto por aluno da turma que realizar Caracterização Socioeconômica")
@@ -321,13 +323,17 @@ public class ProdConfig implements CommandLineRunner {
 						"15 a 45 Pontos por Campanhas Educativas Organizadas por Alunos e Autorizadas por Setores Administrativos ou Pedagógicos\r\n"
 								+ "")
 						.operacao("SUM").valorMinimo(15).valorMaximo(45).senso(saude).tipoRegra(tipoVariavel)
-						.roles(Arrays.asList(administrador, diad)).build(),
+						.roles(Arrays.asList(administrador, diad, coordenadorCurso)).build(),
 
 				// Saúde - DG, DIAC - Positivas
 
 				Regra.builder().descricao("[TURBO] 15 a 100 Pontos por Campanhas Educativas\r\n" + "").operacao("SUM")
-						.valorMinimo(15).valorMaximo(100).senso(saude).tipoRegra(tipoVariavel)
+						.valorMinimo(50).valorMaximo(300).senso(saude).tipoRegra(tipoVariavel)
 						.roles(Arrays.asList(administrador)).build(),
+
+				Regra.builder().descricao("5 pontos por aluno da turma por atuação em núcleo do campus, a cada bimestre")
+						.operacao("SUM").valorMinimo(5).senso(saude).tipoRegra(tipoPorAlunoBimestre)
+						.roles(Arrays.asList(coexpein, administrador)).build(),
 
 				// Autodisciplina - Apoio Acadêmico - Positivas
 				Regra.builder().descricao("2 pontos por delação premiada").operacao("SUM").valorMinimo(2)
@@ -355,8 +361,9 @@ public class ProdConfig implements CommandLineRunner {
 						.valorMaximo(10).senso(autodisciplina).tipoRegra(tipoVariavel)
 						.roles(Arrays.asList(administrador)).build());
 
-		List<Regra> regrasParaSalvar = novasRegras.stream()
-				.filter(regra -> !regrasExistentes.contains(regra.getDescricao())).collect(Collectors.toList());
+		RegraCategorias.aplicar(novasRegras);
+
+		List<Regra> regrasParaSalvar = RegraCatalogoSincronizador.sincronizar(regrasExistentes, novasRegras);
 
 		if (!regrasParaSalvar.isEmpty()) {
 			regraRepository.saveAll(regrasParaSalvar);

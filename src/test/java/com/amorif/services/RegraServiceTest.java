@@ -2,6 +2,8 @@ package com.amorif.services;
 
 import com.amorif.entities.Regra;
 import com.amorif.repository.RegraRepository;
+import com.amorif.repository.RoleRepository;
+import com.amorif.services.impl.RegraServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -18,8 +20,11 @@ public class RegraServiceTest {
     @Mock
     private RegraRepository regraRepository;
 
+    @Mock
+    private RoleRepository roleRepository;
+
     @InjectMocks
-    private RegraService regraService;
+    private RegraServiceImpl regraService;
 
     @BeforeEach
     void setUp() {

@@ -45,6 +45,8 @@ class RegraTest {
         regra = Regra.builder()
                 .id(1L)
                 .descricao("Regra de Teste")
+                .grupo("Biblioteca")
+                .categoria("Acervo e empréstimos")
                 .valorMinimo(10)
                 .valorMaximo(20)
                 .senso(senso)
@@ -58,6 +60,8 @@ class RegraTest {
         // Verifica se os atributos foram atribuídos corretamente
         assertThat(regra.getId()).isEqualTo(1L);
         assertThat(regra.getDescricao()).isEqualTo("Regra de Teste");
+        assertThat(regra.getGrupo()).isEqualTo("Biblioteca");
+        assertThat(regra.getCategoria()).isEqualTo("Acervo e empréstimos");
         assertThat(regra.getValorMinimo()).isEqualTo(10);
         assertThat(regra.getValorMaximo()).isEqualTo(20);
     }

@@ -335,6 +335,7 @@ public class PontuacaoServiceImplTest {
 		TipoRegra tr2 = TipoRegra.builder().id(1L).fixo(true).frequencia(FrequenciaRegraEnum.BIMESTRAL.ordinal())
 				.temAluno(false).build();
 		regra.setTipoRegra(tr2);
+		regra.setCategoria("Avaliação da organização");
 		regra.setValorMinimo(10);
 		dtoRequest.setBimestre(0);
 		dtoRequest.setPontos(10);
@@ -346,6 +347,7 @@ public class PontuacaoServiceImplTest {
 
 		// Verifica se o método do repositório foi chamado com os parâmetros corretos
 		verify(pontuacaoRepository).existsByBimesterAndRule(0, regra.getId(), turma.getId());
+		verify(pontuacaoRepository, never()).existsByBimesterAndGroup(anyInt(), anyLong(), anyString(), any());
 	}
 
 	@Test
@@ -425,6 +427,27 @@ public class PontuacaoServiceImplTest {
 		// Verifica se o lançamento foi feito com sucesso
 		assertNotNull(response);
 		assertEquals(2, response.size());
+	}
+
+	@Test
+	public void testThrowPoints_VariablePerTurn_ShouldRegisterValueForEveryClass() {
+		User userWithPermission = new User("user", "password",
+				Collections.singleton(new SimpleGrantedAuthority("ROLE_APOIO_ACADEMICO")));
+		SecurityContextHolder.getContext().setAuthentication(
+				new UsernamePasswordAuthenticationToken(userWithPermission, null, userWithPermission.getAuthorities()));
+
+		TipoRegra tipoVariavelPorTurno = TipoRegra.builder().id(10L).fixo(false)
+				.frequencia(FrequenciaRegraEnum.AVULSO.ordinal()).porTurno(true).build();
+		regra.setTipoRegra(tipoVariavelPorTurno);
+		regra.setValorMinimo(10);
+		regra.setValorMaximo(50);
+		dtoRequest.setPontos(37);
+		dtoRequest.setTurno(TurnoEnum.MATUTINO.ordinal());
+
+		List<PontuacaoDtoResponse> response = pontuacaoService.throwPoints(dtoRequest);
+
+		assertEquals(2, response.size());
+		response.forEach(pontuacao -> assertEquals(37, pontuacao.getPontos()));
 	}
 
 	@Test

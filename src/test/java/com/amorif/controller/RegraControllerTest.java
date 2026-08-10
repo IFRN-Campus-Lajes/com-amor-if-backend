@@ -52,7 +52,7 @@ public class RegraControllerTest {
     @Test
     public void listarTodas_DeveRetornarListaDeRegras() throws Exception {
         // Configurar dados simulados
-    	Regra regra1 =  Regra.builder().descricao("1 ponto por livro emprestado").operacao("SUM").valorMinimo(1).build();
+        Regra regra1 = Regra.builder().descricao("1 ponto por livro emprestado").grupo("media_comparativa").categoria("Acervo e empréstimos").operacao("SUM").valorMinimo(1).build();
         Regra regra2 = Regra.builder().descricao("12 ponto por livro emprestado").operacao("SUB").valorMinimo(1).build();
 
         // Configurar comportamento do serviço
@@ -62,7 +62,9 @@ public class RegraControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.get("/api/regras/listarTodas"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.size()", is(2)))
-                .andExpect(jsonPath("$[0].descricao", is("1 ponto por livro emprestado")));
+                .andExpect(jsonPath("$[0].descricao", is("1 ponto por livro emprestado")))
+                .andExpect(jsonPath("$[0].grupo", is("media_comparativa")))
+                .andExpect(jsonPath("$[0].categoria", is("Acervo e empréstimos")));
     }
     
     @Test
@@ -77,7 +79,7 @@ public class RegraControllerTest {
         Role role1 = Role.builder().name("ROLE_BIBLIOTECA").build();
         Role role2 = Role.builder().name("ROLE_APOIO_ACADEMICO").build();
         
-        Regra r1 = Regra.builder().id(1L).descricao("Regra 1").roles(Arrays.asList(role1)).build();
+        Regra r1 = Regra.builder().id(1L).descricao("Regra 1").grupo("media_comparativa").categoria("Desempenho acadêmico").roles(Arrays.asList(role1)).build();
         Regra r2 = Regra.builder().id(1L).descricao("Regra 2").roles(Arrays.asList(role2)).build();
 
 
@@ -96,6 +98,8 @@ public class RegraControllerTest {
                 .andExpect(jsonPath("$", hasSize(2)))  // Verifica se a resposta contém duas regras
                 .andExpect(jsonPath("$[0].id").value(1L))
                 .andExpect(jsonPath("$[0].descricao").value("Regra 1"))
+                .andExpect(jsonPath("$[0].grupo").value("media_comparativa"))
+                .andExpect(jsonPath("$[0].categoria").value("Desempenho acadêmico"))
                 .andExpect(jsonPath("$[1].id").value(1L))
                 .andExpect(jsonPath("$[1].descricao").value("Regra 2"));
     }
