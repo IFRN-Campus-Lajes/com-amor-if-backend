@@ -117,6 +117,7 @@ public class PontuacaoServiceImplTest {
 
 		regra = new Regra();
 		regra.setId(1L);
+		regra.setAtivo(true);
 		regra.setValorMinimo(0);
 		regra.setValorMaximo(500);
 		regra.setRoles(Arrays.asList(roleWithPermission));
@@ -427,6 +428,18 @@ public class PontuacaoServiceImplTest {
 		// Verifica se o lançamento foi feito com sucesso
 		assertNotNull(response);
 		assertEquals(2, response.size());
+	}
+
+	@Test
+	public void testThrowPoints_InactiveRule_ShouldNotRegisterPoints() {
+		User userWithPermission = new User("user", "password",
+				Collections.singleton(new SimpleGrantedAuthority("ROLE_APOIO_ACADEMICO")));
+		SecurityContextHolder.getContext().setAuthentication(
+				new UsernamePasswordAuthenticationToken(userWithPermission, null, userWithPermission.getAuthorities()));
+		regra.setAtivo(false);
+
+		assertThrows(RuleNotFoundException.class, () -> pontuacaoService.throwPoints(dtoRequest));
+		verify(pontuacaoRepository, never()).save(any(Pontuacao.class));
 	}
 
 	@Test

@@ -62,6 +62,7 @@ class RegraTest {
         assertThat(regra.getDescricao()).isEqualTo("Regra de Teste");
         assertThat(regra.getGrupo()).isEqualTo("Biblioteca");
         assertThat(regra.getCategoria()).isEqualTo("Acervo e empréstimos");
+		assertThat(regra.isAtivo()).isTrue();
         assertThat(regra.getValorMinimo()).isEqualTo(10);
         assertThat(regra.getValorMaximo()).isEqualTo(20);
     }

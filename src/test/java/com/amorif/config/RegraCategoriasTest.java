@@ -70,4 +70,18 @@ class RegraCategoriasTest {
                 "Outros",
                 "Atividades extracurriculares");
     }
+
+	@Test
+	void substituiRegraLegadaDaExpotecPelaRegraCanonicaDeEventos() {
+		Regra expotec = Regra.builder()
+				.descricao("10 a 140 pontos por premiação da turma na Expotec/Semadec do campus")
+				.senso(Senso.builder().descricao("Saúde").build())
+				.build();
+
+		RegraCategorias.aplicar(List.of(expotec));
+
+		assertThat(expotec.getDescricao())
+				.isEqualTo("10 a 140 pontos para as turmas com maior pontuação em eventos do campus");
+		assertThat(expotec.getCategoria()).isEqualTo("Pesquisa, extensão e eventos");
+	}
 }

@@ -317,9 +317,8 @@ public class TestConfig implements CommandLineRunner {
 						.roles(Arrays.asList(assessoriaPedagogica, administrador)).build(),
 
 				// Saúde - COEXPEIN - Positivas
-				Regra.builder().descricao(
-						"1 ponto por aluno da turma em cada bimestre por atuação em projetos de pesquisa/extensão")
-						.operacao("SUM").valorMinimo(1).senso(saude).tipoRegra(tipoPorAlunoBimestre)
+				Regra.builder().descricao("Pontos por alunos em projetos de pesquisa ou extensão")
+						.operacao("SUM").valorMinimo(1).senso(saude).tipoRegra(tipoVariavelBimestre)
 						.roles(Arrays.asList(coexpein, administrador)).build(),
 
 				Regra.builder().descricao("10 a 140 pontos por premiação da turma na Expotec/Semadec do campus")

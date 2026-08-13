@@ -38,7 +38,7 @@ public class RegraServiceTest {
         Regra regra2 = Regra.builder().descricao("12 ponto por livro emprestado").operacao("SUB").valorMinimo(1).build();
 
         // Simular comportamento do repository
-        when(regraRepository.findAll()).thenReturn(Arrays.asList(regra1, regra2));
+        when(regraRepository.findByAtivoTrue()).thenReturn(Arrays.asList(regra1, regra2));
 
         // Executar o teste
         List<Regra> regras = regraService.listarTodas();
@@ -47,5 +47,14 @@ public class RegraServiceTest {
         assertEquals(2, regras.size());
         assertEquals("1 ponto por livro emprestado", regras.get(0).getDescricao());
     }
+
+	@Test
+	public void listarTodas_DeveConsultarSomenteRegrasAtivas() {
+		when(regraRepository.findByAtivoTrue()).thenReturn(List.of());
+
+		regraService.listarTodas();
+
+		org.mockito.Mockito.verify(regraRepository).findByAtivoTrue();
+	}
 }
 

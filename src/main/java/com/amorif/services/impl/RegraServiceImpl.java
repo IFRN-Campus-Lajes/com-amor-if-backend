@@ -25,7 +25,7 @@ public class RegraServiceImpl implements RegraService{
     private RoleRepository roleRepository;
 
     public List<Regra> listarTodas() {
-        return regraRepository.findAll();
+        return regraRepository.findByAtivoTrue();
     }
     
     public List<Regra> listarRegrasPermitidasParaUsuario() {
@@ -39,7 +39,7 @@ public class RegraServiceImpl implements RegraService{
             List<Role> userRoles = roleRepository.findByNameIn(userRolesNames);
 
             // Filtra as regras, excluindo aquelas que possuem a ROLE_SISTEMA
-            return regraRepository.findByRolesIn(userRoles).stream()
+            return regraRepository.findByRolesInAndAtivoTrue(userRoles).stream()
                     .filter(regra -> regra.getRoles().stream()
                             .noneMatch(role -> "ROLE_SISTEMA".equals(role.getName())))
                     .collect(Collectors.toList());

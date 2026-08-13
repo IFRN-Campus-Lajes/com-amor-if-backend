@@ -40,6 +40,7 @@ public final class RegraCatalogoSincronizador {
         boolean alterada = !Objects.equals(origem.getDescricao(), destino.getDescricao())
                 || !Objects.equals(origem.getGrupo(), destino.getGrupo())
                 || !Objects.equals(origem.getCategoria(), destino.getCategoria())
+                || origem.isAtivo() != destino.isAtivo()
                 || origem.getValorMinimo() != destino.getValorMinimo()
                 || origem.getValorMaximo() != destino.getValorMaximo()
                 || !Objects.equals(origem.getSenso(), destino.getSenso())
@@ -53,6 +54,7 @@ public final class RegraCatalogoSincronizador {
         destino.setDescricao(origem.getDescricao());
         destino.setGrupo(origem.getGrupo());
         destino.setCategoria(origem.getCategoria());
+        destino.setAtivo(origem.isAtivo());
         destino.setValorMinimo(origem.getValorMinimo());
         destino.setValorMaximo(origem.getValorMaximo());
         destino.setSenso(origem.getSenso());
