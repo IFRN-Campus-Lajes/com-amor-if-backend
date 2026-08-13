@@ -8,7 +8,9 @@ import com.amorif.entities.Regra;
 import com.amorif.entities.Role;
 
 public interface RegraRepository extends JpaRepository<Regra, Long> {
-	
-	List<Regra> findByRolesIn(List<Role> roles);
+
+	List<Regra> findByAtivoTrue();
+
+	List<Regra> findByRolesInAndAtivoTrue(List<Role> roles);
 
 }

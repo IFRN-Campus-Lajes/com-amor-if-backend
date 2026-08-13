@@ -20,6 +20,9 @@ class StartAppTests {
 	void contextLoadsWithCategorizedRules() {
 		assertThat(regraRepository.findAll())
 				.isNotEmpty()
-				.allSatisfy(regra -> assertThat(regra.getCategoria()).isNotBlank());
+				.allSatisfy(regra -> {
+					assertThat(regra.getCategoria()).isNotBlank();
+					assertThat(regra.isAtivo()).isTrue();
+				});
 	}
 }

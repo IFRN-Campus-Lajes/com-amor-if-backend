@@ -39,6 +39,10 @@ private static final long serialVersionUID = 1L;
 	private String categoria;
 
 	@Column(nullable = false)
+	@Builder.Default
+	private boolean ativo = true;
+
+	@Column(nullable = false)
 	private String operacao;
 	
 	@Column(nullable = false)
@@ -64,13 +68,14 @@ private static final long serialVersionUID = 1L;
     )
     private List<Role> roles;
 
-	public Regra(Long id, String descricao, String grupo, String categoria, String operacao, int valorMinimo, int valorMaximo, Senso senso,
+	public Regra(Long id, String descricao, String grupo, String categoria, boolean ativo, String operacao, int valorMinimo, int valorMaximo, Senso senso,
 			TipoRegra tipoRegra, List<Role> roles) {
 		super();
 		this.id = id;
 		this.descricao = descricao;
 		this.grupo = grupo;
 		this.categoria = categoria;
+		this.ativo = ativo;
 		this.operacao = operacao;
 		this.valorMinimo = valorMinimo;
 		this.valorMaximo = valorMaximo;

@@ -380,6 +380,10 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 	}
 
 	private void checkUserPermissionToReleasePoints(Regra regra) {
+		if (!regra.isAtivo()) {
+			throw new RuleNotFoundException("A regra informada está inativa e não aceita novos lançamentos.");
+		}
+
 		if (!userHasPermission(regra)) {
 			throw new UserHasNoPermitedRoleException("Usuário não tem permissão para lançar esta pontuação.");
 		}

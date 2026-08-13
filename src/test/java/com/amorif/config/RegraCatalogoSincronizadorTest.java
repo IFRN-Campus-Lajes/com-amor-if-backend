@@ -106,6 +106,43 @@ class RegraCatalogoSincronizadorTest {
         assertThat(segundaSincronizacao).isEmpty();
     }
 
+	@Test
+	void reconheceRegraAgregadaDeProjetosEPreservaSeuId() {
+		Senso saude = Senso.builder().id(2L).descricao("Saúde").build();
+		TipoRegra variavelBimestral = TipoRegra.builder().id(3L)
+				.descricao("Valor Variável por bimestre").frequencia(1).build();
+		Regra existente = Regra.builder().id(31L)
+				.descricao("Pontos por aluno da turma em cada bimestre por atuação em projetos de pesquisa/extensão")
+				.operacao("SUM").valorMinimo(1).valorMaximo(500).senso(saude)
+				.tipoRegra(variavelBimestral).roles(roles).build();
+		Regra canonica = Regra.builder()
+				.descricao("Pontos por aluno da turma em cada bimestre por atuação em projetos de pesquisa/extensão")
+				.operacao("SUM").valorMinimo(1).valorMaximo(500).senso(saude)
+				.tipoRegra(variavelBimestral).roles(roles).build();
+		RegraCategorias.aplicar(List.of(canonica));
+
+		List<Regra> alteradas = RegraCatalogoSincronizador.sincronizar(List.of(existente), List.of(canonica));
+
+		assertThat(alteradas).containsExactly(existente);
+		assertThat(existente.getId()).isEqualTo(31L);
+		assertThat(existente.getDescricao())
+				.isEqualTo("Pontos por alunos em projetos de pesquisa ou extensão");
+		assertThat(existente.getCategoria()).isEqualTo("Pesquisa, extensão e eventos");
+		assertThat(existente.getTipoRegra()).isSameAs(variavelBimestral);
+	}
+
+	@Test
+	void reativaRegraCanonicaSeElaEstiverInativa() {
+		Regra existente = regraExistente(48L, "Pontos por livro emprestado (1 ponto por livro)", tipoFixo);
+		existente.setAtivo(false);
+		Regra canonica = regraCanonica("Pontos por livro emprestado (1 ponto por livro)", tipoFixo);
+
+		List<Regra> alteradas = RegraCatalogoSincronizador.sincronizar(List.of(existente), List.of(canonica));
+
+		assertThat(alteradas).containsExactly(existente);
+		assertThat(existente.isAtivo()).isTrue();
+	}
+
     @Test
     void aceitaAliasComDiferencasDeEspacosEQuebraDeLinha() {
         Senso saude = Senso.builder().descricao("Saúde").build();
