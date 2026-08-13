@@ -144,6 +144,58 @@ class RegraCatalogoSincronizadorTest {
 	}
 
     @Test
+    void prefereRegraAtivaQuandoUmAliasInativoTambemCorresponde() {
+        Senso autodisciplina = Senso.builder().id(5L).descricao("Autodisciplina").build();
+        TipoRegra tipoVariavel = TipoRegra.builder().id(8L).descricao("Valor Variável").build();
+        Regra aliasInativo = Regra.builder().id(37L)
+                .descricao("5 pontos por dia por aluno da turma suspenso")
+                .ativo(false).operacao("SUB").valorMinimo(1).senso(autodisciplina)
+                .tipoRegra(tipoVariavel).roles(roles).build();
+        Regra vigente = Regra.builder().id(43L)
+                .descricao("Perda de 5 pontos por dia de suspensão do aluno")
+                .operacao("SUB").valorMinimo(1).senso(autodisciplina)
+                .tipoRegra(tipoVariavel).roles(roles).build();
+        Regra canonica = Regra.builder()
+                .descricao(RegraCategorias.DESCRICAO_SUSPENSAO_ATIVA)
+                .operacao("SUB").valorMinimo(5).senso(autodisciplina)
+                .tipoRegra(tipoVariavel).roles(roles).build();
+        RegraCategorias.aplicar(List.of(canonica));
+
+        List<Regra> alteradas = RegraCatalogoSincronizador.sincronizar(
+                List.of(aliasInativo, vigente), List.of(canonica));
+
+        assertThat(alteradas).containsExactly(vigente);
+        assertThat(aliasInativo.isAtivo()).isFalse();
+        assertThat(aliasInativo.getValorMinimo()).isEqualTo(1);
+        assertThat(vigente.getId()).isEqualTo(43L);
+        assertThat(vigente.getDescricao()).isEqualTo(RegraCategorias.DESCRICAO_SUSPENSAO_ATIVA);
+        assertThat(vigente.getValorMinimo()).isEqualTo(5);
+    }
+
+    @Test
+    void naoReativaRegraHistoricaDeUmPontoComoRegraDeCincoPontos() {
+        Senso autodisciplina = Senso.builder().id(5L).descricao("Autodisciplina").build();
+        TipoRegra tipoVariavel = TipoRegra.builder().id(8L).descricao("Valor Variável").build();
+        Regra historica = Regra.builder().id(37L)
+                .descricao(RegraCategorias.DESCRICAO_SUSPENSAO_HISTORICA_INATIVA)
+                .ativo(false).operacao("SUB").valorMinimo(1).senso(autodisciplina)
+                .tipoRegra(tipoVariavel).roles(roles).build();
+        Regra canonica = Regra.builder()
+                .descricao(RegraCategorias.DESCRICAO_SUSPENSAO_ATIVA)
+                .operacao("SUB").valorMinimo(5).senso(autodisciplina)
+                .tipoRegra(tipoVariavel).roles(roles).build();
+        RegraCategorias.aplicar(List.of(canonica));
+
+        List<Regra> alteradas = RegraCatalogoSincronizador.sincronizar(
+                List.of(historica), List.of(canonica));
+
+        assertThat(alteradas).containsExactly(canonica);
+        assertThat(historica.isAtivo()).isFalse();
+        assertThat(historica.getDescricao())
+                .isEqualTo(RegraCategorias.DESCRICAO_SUSPENSAO_HISTORICA_INATIVA);
+    }
+
+    @Test
     void aceitaAliasComDiferencasDeEspacosEQuebraDeLinha() {
         Senso saude = Senso.builder().descricao("Saúde").build();
         Regra existente = Regra.builder().id(46L)

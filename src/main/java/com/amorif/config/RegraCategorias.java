@@ -12,6 +12,9 @@ import com.amorif.entities.Regra;
 /** Centraliza a redação e a categoria de apresentação das regras. */
 public final class RegraCategorias {
 
+    static final String DESCRICAO_SUSPENSAO_ATIVA = "Perda de 5 pontos por dia de suspensão de aluno";
+    static final String DESCRICAO_SUSPENSAO_HISTORICA_INATIVA = "Perda de 1 ponto por dia de suspensão de aluno";
+
     private record Definicao(String senso, String descricaoCanonica, String categoria, List<String> aliases) {
     }
 
@@ -141,7 +144,7 @@ public final class RegraCategorias {
                     "1 ponto por aluno da turma notificado", "Subtração de 1 ponto por aluno da turma notificado"),
             regra("Autodisciplina", "Perda de X pontos por turma notificada", "Ocorrências disciplinares",
                     "Pontos por turma notificada", "Subtração de X pontos por turma notificada"),
-            regra("Autodisciplina", "Perda de 5 pontos por dia de suspensão de aluno", "Ocorrências disciplinares",
+            regra("Autodisciplina", DESCRICAO_SUSPENSAO_ATIVA, "Ocorrências disciplinares",
                     "5 pontos por dia por aluno da turma suspenso",
                     "Perda de 5 pontos por dia de suspensão do aluno",
                     "Subtração de 5 pontos por dia de suspensão de aluno da turma"),
@@ -170,6 +173,13 @@ public final class RegraCategorias {
     public static boolean corresponde(Regra existente, Regra canonica) {
         Definicao definicao = localizar(canonica);
         if (definicao == null || existente.getSenso() == null) {
+            return false;
+        }
+        // A regra de 1 ponto identifica o registro histórico inativo. Ela não pode
+        // ser promovida a alias da regra ativa de 5 pontos em sincronizações futuras.
+        if (normalizar("Autodisciplina").equals(normalizar(existente.getSenso().getDescricao()))
+                && normalizar(DESCRICAO_SUSPENSAO_HISTORICA_INATIVA)
+                        .equals(normalizar(existente.getDescricao()))) {
             return false;
         }
         return normalizar(definicao.senso()).equals(normalizar(existente.getSenso().getDescricao()))

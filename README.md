@@ -87,6 +87,11 @@ docker build -t com-amor-if-backend .
 docker run --rm -p 8080:8080 --env-file .env com-amor-if-backend
 ```
 
+## Gestão de regras
+
+Enquanto não houver CRUD administrativo, novas regras e alterações no catálogo
+devem seguir o [plano de gestão de regras sem CRUD](docs/PLANO_GESTAO_REGRAS_SEM_CRUD.md).
+
 ## Projetos relacionados
 
 - Frontend: [IFRN-Campus-Lajes/com-amor-if-frontend](https://github.com/IFRN-Campus-Lajes/com-amor-if-frontend)

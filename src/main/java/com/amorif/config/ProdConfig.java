@@ -345,7 +345,7 @@ public class ProdConfig implements CommandLineRunner {
 						.roles(Arrays.asList(apoioAcademico, seac, administrador)).build(),
 				Regra.builder().descricao("Pontos por turma notificada").operacao("SUB").senso(autodisciplina)
 						.tipoRegra(tipoVariavel).roles(Arrays.asList(apoioAcademico, seac, administrador)).build(),
-				Regra.builder().descricao("5 pontos por dia por aluno da turma suspenso").operacao("SUB").valorMinimo(1)
+				Regra.builder().descricao(RegraCategorias.DESCRICAO_SUSPENSAO_ATIVA).operacao("SUB").valorMinimo(5)
 						.senso(autodisciplina).tipoRegra(tipoVariavel)
 						.roles(Arrays.asList(apoioAcademico, seac, administrador)).build(),
 
