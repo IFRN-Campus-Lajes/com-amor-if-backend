@@ -38,7 +38,8 @@ BEGIN
     IF descricao_regra NOT IN (
         '1 ponto por dia de aluno da turma suspenso',
         'Perda de 1 ponto por dia de suspensão do aluno',
-        'Perda de 5 pontos por dia de suspensão do aluno'
+        'Perda de 5 pontos por dia de suspensão do aluno',
+        'Perda de 5 pontos por dia de suspensão de aluno'
     ) THEN
         RAISE EXCEPTION 'Pré-condição inválida: descrição inesperada para a regra ID 37: %', descricao_regra;
     END IF;
@@ -136,7 +137,7 @@ END
 $$;
 
 UPDATE regra
-   SET descricao = 'Perda de 5 pontos por dia de suspensão do aluno',
+   SET descricao = 'Perda de 5 pontos por dia de suspensão de aluno',
        categoria = 'Ocorrências disciplinares',
        ativo = false
  WHERE id = 37;
