@@ -17,18 +17,20 @@ class RegraCatalogoSincronizadorTest {
     private final Senso utilizacao = Senso.builder().id(1L).descricao("Utilização").build();
     private final TipoRegra tipoFixo = TipoRegra.builder().id(1L).descricao("Valor Fixo").build();
     private final TipoRegra tipoBimestral = TipoRegra.builder().id(2L).descricao("Valor Fixo por bimestre").build();
+    private final TipoRegra tipoVariavel = TipoRegra.builder().id(3L).descricao("Valor Variável").build();
     private final List<Role> roles = List.of(Role.builder().id(1L).name("ROLE_BIBLIOTECARIO").build());
 
     @Test
     void revisaoTextualPreservaIdDoRegistroExistente() {
-        Regra existente = regraExistente(42L, "Pontos por livro emprestado (1 ponto por livro)", tipoFixo);
-        Regra canonica = regraCanonica("Pontos por livro emprestado (1 ponto por livro)", tipoFixo);
+        Regra existente = regraExistente(42L, "1 ponto por empréstimo de livros", tipoVariavel);
+        Regra canonica = regraCanonica("Pontos por empréstimos de livros", tipoVariavel);
 
         List<Regra> alteradas = RegraCatalogoSincronizador.sincronizar(List.of(existente), List.of(canonica));
 
         assertThat(alteradas).containsExactly(existente);
         assertThat(existente.getId()).isEqualTo(42L);
-        assertThat(existente.getDescricao()).isEqualTo("1 ponto por livro emprestado");
+        assertThat(existente.getDescricao()).isEqualTo("Pontos por empréstimos de livros");
+        assertThat(existente.getTipoRegra()).isSameAs(tipoVariavel);
     }
 
     @Test

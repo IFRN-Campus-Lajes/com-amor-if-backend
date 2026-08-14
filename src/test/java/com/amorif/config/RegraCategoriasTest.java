@@ -27,7 +27,7 @@ class RegraCategoriasTest {
 
         assertThat(regraDeMedia.getCategoria()).isEqualTo("Desempenho acadêmico");
         assertThat(regraDeMedia.getGrupo()).isEqualTo("media_comparativa");
-        assertThat(regraDeLivro.getDescricao()).isEqualTo("1 ponto por livro emprestado");
+        assertThat(regraDeLivro.getDescricao()).isEqualTo("Pontos por empréstimos de livros");
         assertThat(regraDeLivro.getCategoria()).isEqualTo("Acervo e empréstimos");
         assertThat(regraDeLivro.getGrupo()).isNull();
     }

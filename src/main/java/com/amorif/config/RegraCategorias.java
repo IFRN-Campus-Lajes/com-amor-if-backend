@@ -19,8 +19,9 @@ public final class RegraCategorias {
     }
 
     private static final List<Definicao> DEFINICOES = List.of(
-            regra("Utilização", "1 ponto por livro emprestado", "Acervo e empréstimos",
-                    "Pontos por livro emprestado (1 ponto por livro)", "1 ponto por livro emprestado pela turma"),
+            regra("Utilização", "Pontos por empréstimos de livros", "Acervo e empréstimos",
+                    "1 ponto por livro emprestado", "Pontos por livro emprestado (1 ponto por livro)",
+                    "1 ponto por livro emprestado pela turma", "1 ponto por empréstimo de livros"),
             regra("Utilização", "30 pontos por campanha de doação de livros", "Campanhas e grupos de estudo",
                     "30 pontos por campanha de doação"),
             regra("Utilização", "20 pontos por bimestre para a turma com mais grupos de estudo",
