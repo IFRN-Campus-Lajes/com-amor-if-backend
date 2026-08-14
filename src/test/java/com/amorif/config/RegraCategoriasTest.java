@@ -27,7 +27,7 @@ class RegraCategoriasTest {
 
         assertThat(regraDeMedia.getCategoria()).isEqualTo("Desempenho acadêmico");
         assertThat(regraDeMedia.getGrupo()).isEqualTo("media_comparativa");
-        assertThat(regraDeLivro.getDescricao()).isEqualTo("1 ponto por livro emprestado");
+        assertThat(regraDeLivro.getDescricao()).isEqualTo("Pontos por empréstimos de livros");
         assertThat(regraDeLivro.getCategoria()).isEqualTo("Acervo e empréstimos");
         assertThat(regraDeLivro.getGrupo()).isNull();
     }
@@ -84,4 +84,21 @@ class RegraCategoriasTest {
 				.isEqualTo("10 a 140 pontos para as turmas com maior pontuação em eventos do campus");
 		assertThat(expotec.getCategoria()).isEqualTo("Pesquisa, extensão e eventos");
 	}
+
+    @Test
+    void mantemSuspensaoHistoricaDeUmPontoForaDosAliasesDaRegraAtiva() {
+        Senso autodisciplina = Senso.builder().descricao("Autodisciplina").build();
+        Regra historica = Regra.builder()
+                .descricao(RegraCategorias.DESCRICAO_SUSPENSAO_HISTORICA_INATIVA)
+                .senso(autodisciplina)
+                .build();
+        Regra canonica = Regra.builder()
+                .descricao(RegraCategorias.DESCRICAO_SUSPENSAO_ATIVA)
+                .senso(autodisciplina)
+                .build();
+
+        RegraCategorias.aplicar(List.of(canonica));
+
+        assertThat(RegraCategorias.corresponde(historica, canonica)).isFalse();
+    }
 }

@@ -185,8 +185,8 @@ public class TestConfig implements CommandLineRunner {
 		// População das regras
 		List<Regra> regras = new ArrayList<>(Arrays.asList(
 				// Utilização - Bibliotecário - Positivas
-				Regra.builder().descricao("Pontos por livro emprestado (1 ponto por livro)").operacao("SUM").valorMinimo(1)
-						.senso(utilizacao).tipoRegra(tipoFixo).roles(Arrays.asList(bibliotecario, administrador))
+				Regra.builder().descricao("Pontos por empréstimos de livros").operacao("SUM").valorMinimo(1)
+						.senso(utilizacao).tipoRegra(tipoVariavel).roles(Arrays.asList(bibliotecario, administrador))
 						.build(),
 				Regra.builder().descricao("30 pontos por campanha de doação").operacao("SUM").valorMinimo(30)
 						.senso(utilizacao).tipoRegra(tipoFixo).roles(Arrays.asList(bibliotecario, administrador))
@@ -354,7 +354,7 @@ public class TestConfig implements CommandLineRunner {
 						.roles(Arrays.asList(apoioAcademico, seac, administrador)).build(),
 				Regra.builder().descricao("Pontos por turma notificada").operacao("SUB").senso(autodisciplina)
 						.tipoRegra(tipoVariavel).roles(Arrays.asList(apoioAcademico, seac, administrador)).build(),
-				Regra.builder().descricao("5 pontos por dia por aluno da turma suspenso").operacao("SUB").valorMinimo(1)
+				Regra.builder().descricao(RegraCategorias.DESCRICAO_SUSPENSAO_ATIVA).operacao("SUB").valorMinimo(5)
 						.senso(autodisciplina).tipoRegra(tipoVariavel)
 						.roles(Arrays.asList(apoioAcademico, seac, administrador)).build(),
 

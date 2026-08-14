@@ -16,10 +16,7 @@ public final class RegraCatalogoSincronizador {
         List<Regra> regrasParaSalvar = new ArrayList<>();
 
         for (Regra canonica : canonicas) {
-            Regra existente = existentes.stream()
-                    .filter(item -> RegraCategorias.corresponde(item, canonica))
-                    .findFirst()
-                    .orElse(null);
+            Regra existente = localizarCorrespondente(existentes, canonica);
 
             if (existente == null) {
                 regrasParaSalvar.add(canonica);
@@ -29,6 +26,19 @@ public final class RegraCatalogoSincronizador {
         }
 
         return regrasParaSalvar;
+    }
+
+    private static Regra localizarCorrespondente(List<Regra> existentes, Regra canonica) {
+        List<Regra> correspondentes = existentes.stream()
+                .filter(item -> RegraCategorias.corresponde(item, canonica))
+                .toList();
+
+        // Se um alias arquivado e a regra vigente coexistirem, a vigente deve ser
+        // atualizada. Uma regra inativa só é reativada quando não há opção ativa.
+        return correspondentes.stream()
+                .filter(Regra::isAtivo)
+                .findFirst()
+                .orElseGet(() -> correspondentes.stream().findFirst().orElse(null));
     }
 
     private static boolean copiarConfiguracao(Regra origem, Regra destino) {
