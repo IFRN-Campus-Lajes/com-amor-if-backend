@@ -29,6 +29,7 @@ import com.amorif.exceptions.AnnualRuleException;
 import com.amorif.exceptions.AnnualRulePerStudentException;
 import com.amorif.exceptions.BimonthlyRuleException;
 import com.amorif.exceptions.BimonthlyRulePerStudentException;
+import com.amorif.exceptions.ClosedSchoolYearException;
 import com.amorif.exceptions.InvalidBimesterException;
 import com.amorif.exceptions.InvalidExtraBimesterException;
 import com.amorif.exceptions.InvalidFixedValueException;
@@ -159,6 +160,7 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 
 	@Override
 	public List<PontuacaoDtoResponse> throwAutoPoints(PontuacaoDtoRequest dtoRequest) {
+		requireOpenSchoolYear();
 		List<PontuacaoDtoResponse> pontuacoes = new ArrayList<>();
 
 		// IDs das regras de qualificação
@@ -213,6 +215,7 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 
 	@Override
 	public List<PontuacaoDtoResponse> throwPoints(PontuacaoDtoRequest dtoRequest) {
+		requireOpenSchoolYear();
 		List<PontuacaoDtoResponse> pontuacoes = new ArrayList<PontuacaoDtoResponse>();
 		Regra regra = this.regraRepository.getReferenceById(dtoRequest.getIdRegra());
 		TipoRegra tipoRegra = regra.getTipoRegra();
@@ -244,7 +247,7 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 		User user = userRepository.findByMatricula(userDetails.getUsername()).get();
 		Turma turma = this.turmaRepository.getReferenceById(dtoRequest.getIdTurma());
 		Regra regra = this.regraRepository.getReferenceById(dtoRequest.getIdRegra());
-		AnoLetivo anoAtual = this.anoLetivoRepository.getLastActiveAnoLetivo();
+		AnoLetivo anoAtual = requireOpenSchoolYear();
 
 		if (turma != null && regra != null && anoAtual != null) {
 
@@ -287,6 +290,8 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 			throw new PointsNotFoundException("Pontuação não encontrada");
 		}
 
+		ensureSchoolYearIsOpen(pontuacao.getAnoLetivo());
+
 		// Verifica se a pontuação está anulada ou aplicada
 		if (pontuacao.isAnulado() || pontuacao.isAplicado()) {
 			throw new PointsAlreadyCancelledOrAppliedException(
@@ -307,6 +312,19 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 		// Deleta a pontuação
 		pontuacaoRepository.deleteByContadorAndTurma_Id(pontuacaoDtoRequest.getContador(),
 				pontuacaoDtoRequest.getIdTurma());
+	}
+
+	private AnoLetivo requireOpenSchoolYear() {
+		AnoLetivo anoLetivo = anoLetivoRepository.getLastActiveAnoLetivo();
+		ensureSchoolYearIsOpen(anoLetivo);
+		return anoLetivo;
+	}
+
+	private void ensureSchoolYearIsOpen(AnoLetivo anoLetivo) {
+		if (anoLetivo == null || !anoLetivo.isAberto()) {
+			throw new ClosedSchoolYearException(
+					"Não é possível alterar pontuações porque não existe ano letivo aberto.");
+		}
 	}
 
 	private PontuacaoDtoResponse dtoFromPontuacao(Pontuacao pontuacao) {

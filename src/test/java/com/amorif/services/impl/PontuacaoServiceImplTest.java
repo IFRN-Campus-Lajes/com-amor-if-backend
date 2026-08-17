@@ -20,6 +20,7 @@ import com.amorif.exceptions.AnnualRuleException;
 import com.amorif.exceptions.AnnualRulePerStudentException;
 import com.amorif.exceptions.BimonthlyRuleException;
 import com.amorif.exceptions.BimonthlyRulePerStudentException;
+import com.amorif.exceptions.ClosedSchoolYearException;
 import com.amorif.exceptions.InvalidBimesterException;
 import com.amorif.exceptions.InvalidExtraBimesterException;
 import com.amorif.exceptions.InvalidFixedValueException;
@@ -168,6 +169,41 @@ public class PontuacaoServiceImplTest {
 		// Verifica se o lançamento foi feito com sucesso
 		assertNotNull(response);
 		assertEquals(dtoRequest.getPontos(), response.getPontos());
+	}
+
+	@Test
+	void throwPoints_WhenThereIsNoOpenSchoolYear_ShouldNotRegisterPoints() {
+		when(anoLetivoRepository.getLastActiveAnoLetivo()).thenReturn(null);
+
+		assertThrows(ClosedSchoolYearException.class, () -> pontuacaoService.throwPoints(dtoRequest));
+
+		verify(pontuacaoRepository, never()).save(any(Pontuacao.class));
+		verifyNoInteractions(regraRepository);
+	}
+
+	@Test
+	void throwAutoPoints_WhenThereIsNoOpenSchoolYear_ShouldNotReprocessPoints() {
+		when(anoLetivoRepository.getLastActiveAnoLetivo()).thenReturn(null);
+
+		assertThrows(ClosedSchoolYearException.class, () -> pontuacaoService.throwAutoPoints(dtoRequest));
+
+		verify(pontuacaoRepository, never()).save(any(Pontuacao.class));
+		verifyNoInteractions(regraRepository);
+		verify(turmaRepository, never()).findTurmasQualificadasParaBonus(anyLong(), anyList(), anyInt());
+	}
+
+	@Test
+	void deletePontuacao_WhenItsSchoolYearIsClosed_ShouldNotDeletePoints() {
+		AnoLetivo anoFechado = AnoLetivo.builder().id(1L).ano(2023).aberto(false).build();
+		Pontuacao pontuacao = new Pontuacao();
+		pontuacao.setAnoLetivo(anoFechado);
+		dtoRequest.setContador(1);
+		when(pontuacaoRepository.findByContadorAndTurma_Id(dtoRequest.getContador(), dtoRequest.getIdTurma()))
+				.thenReturn(pontuacao);
+
+		assertThrows(ClosedSchoolYearException.class, () -> pontuacaoService.deletePontuacao(dtoRequest));
+
+		verify(pontuacaoRepository, never()).deleteByContadorAndTurma_Id(any(), anyLong());
 	}
 
 	@Test
@@ -696,7 +732,7 @@ public class PontuacaoServiceImplTest {
 	    when(regraRepository.getReferenceById(18L)).thenReturn(regraLimpeza);
 	    when(regraRepository.getReferenceById(11L)).thenReturn(regraOrdenacao);
 	    
-	    AnoLetivo ultimoAnoLetivoAtivo = AnoLetivo.builder().ano(2023).build();
+	    AnoLetivo ultimoAnoLetivoAtivo = AnoLetivo.builder().id(1L).ano(2023).aberto(true).build();
 	    when(anoLetivoRepository.getLastActiveAnoLetivo()).thenReturn(ultimoAnoLetivoAtivo);
 
 	    PontuacaoDtoRequest dtoRequest = new PontuacaoDtoRequest();
