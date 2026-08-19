@@ -11,6 +11,7 @@ atualização, ele executa `docker compose up --build --detach` e confirma que
 ```bash
 sudo install -m 755 /home/manoel.cunha/deploy/backend/ops/monitorar-deploy.sh /usr/local/bin/monitorar-deploy
 sudo cp /home/manoel.cunha/deploy/backend/ops/.env.monitor.example /home/manoel.cunha/deploy/.env.monitor
+sudo chown manoel.cunha:manoel.cunha /home/manoel.cunha/deploy/.env.monitor
 sudo chmod 600 /home/manoel.cunha/deploy/.env.monitor
 ```
 
@@ -20,13 +21,13 @@ senha de aplicativo. O arquivo contém segredo e não deve ser versionado.
 ## Teste de e-mail
 
 ```bash
-sudo /usr/local/bin/monitorar-deploy --test-email
+sudo -u manoel.cunha /usr/local/bin/monitorar-deploy --test-email
 ```
 
 ## Execução manual
 
 ```bash
-sudo /usr/local/bin/monitorar-deploy
+sudo -u manoel.cunha /usr/local/bin/monitorar-deploy
 ```
 
 O script não atualiza um repositório que tenha alterações locais ou que não
