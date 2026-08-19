@@ -4,7 +4,8 @@
 # periodicamente na VM.
 set -Eeuo pipefail
 
-CONFIG_FILE="${DEPLOY_MONITOR_CONFIG:-/deploy/.env.monitor}"
+DEFAULT_DEPLOY_DIR="/home/manoel.cunha/deploy"
+CONFIG_FILE="${DEPLOY_MONITOR_CONFIG:-$DEFAULT_DEPLOY_DIR/.env.monitor}"
 
 if [[ ! -f "$CONFIG_FILE" ]]; then
     echo "Arquivo de configuração não encontrado: $CONFIG_FILE" >&2
