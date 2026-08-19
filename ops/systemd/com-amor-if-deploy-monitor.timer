@@ -1,0 +1,10 @@
+[Unit]
+Description=Executa o monitor de deploy do Com Amor IF a cada minuto
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+Persistent=true
+Unit=com-amor-if-deploy-monitor.service
+
+[Install]
+WantedBy=timers.target
