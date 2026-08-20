@@ -1,10 +1,12 @@
 package com.amorif.services.impl;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.amorif.dto.request.PontuacaoDtoRequest;
 import com.amorif.dto.request.TurmaDtoRequest;
@@ -15,6 +17,7 @@ import com.amorif.entities.AnoLetivo;
 import com.amorif.entities.Pontuacao;
 import com.amorif.entities.Turma;
 import com.amorif.exceptions.InvalidArgumentException;
+import com.amorif.exceptions.ClosedSchoolYearException;
 import com.amorif.repository.AnoLetivoRepository;
 import com.amorif.repository.PontuacaoRepository;
 import com.amorif.repository.TurmaRepository;
@@ -60,11 +63,11 @@ public class ManagerServiceImpl implements ManagerService {
 
 	@Override
 	public PontuacaoDtoResponse approvePoints(PontuacaoDtoRequest request) {
-		System.out.println(request.getContador());
 		Turma turma = this.turmaRepository.getReferenceById(request.getIdTurma());
 		if (turma != null) {
 			Pontuacao pontuacao = this.pontuacaoRepository.getByContadorTurma(request.getContador(), turma);
 			if (pontuacao != null) {
+				ensureSchoolYearIsOpen(pontuacao);
 				pontuacao.setAplicado(true);
 				pontuacao.setAnulado(false);
 				pontuacao = this.pontuacaoRepository.save(pontuacao);
@@ -87,6 +90,7 @@ public class ManagerServiceImpl implements ManagerService {
 		if (turma != null) {
 			Pontuacao pontuacao = this.pontuacaoRepository.getByContadorTurma(request.getContador(), turma);
 			if (pontuacao != null) {
+				ensureSchoolYearIsOpen(pontuacao);
 				pontuacao.setAnulado(true);
 				pontuacao.setAplicado(false);
 				pontuacao = this.pontuacaoRepository.save(pontuacao);
@@ -100,6 +104,19 @@ public class ManagerServiceImpl implements ManagerService {
 			}
 		} else {
 			throw new InvalidArgumentException("Parâmetros inválidos para a requisição!");
+		}
+	}
+
+	@Override
+	@Transactional
+	public List<PontuacaoDtoResponse> approveAllPoints(List<PontuacaoDtoRequest> requests) {
+		return requests.stream().map(this::approvePoints).toList();
+	}
+
+	private void ensureSchoolYearIsOpen(Pontuacao pontuacao) {
+		if (pontuacao.getAnoLetivo() == null || !pontuacao.getAnoLetivo().isAberto()) {
+			throw new ClosedSchoolYearException(
+					"Não é possível alterar pontuações porque o ano letivo está fechado.");
 		}
 	}
 

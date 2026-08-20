@@ -13,6 +13,7 @@ import com.amorif.exceptions.AnnualRuleException;
 import com.amorif.exceptions.AnnualRulePerStudentException;
 import com.amorif.exceptions.BimonthlyRuleException;
 import com.amorif.exceptions.BimonthlyRulePerStudentException;
+import com.amorif.exceptions.ClosedSchoolYearException;
 import com.amorif.exceptions.InvalidArgumentException;
 import com.amorif.exceptions.InvalidBimesterException;
 import com.amorif.exceptions.InvalidExtraBimesterException;
@@ -30,6 +31,12 @@ import com.amorif.exceptions.UserHasNoPermitedRoleException;
 
 @ControllerAdvice
 public class CustomExceptionHandler extends ResponseEntityExceptionHandler {
+
+	@ExceptionHandler(ClosedSchoolYearException.class)
+	public ResponseEntity<Object> handleClosedSchoolYearException(ClosedSchoolYearException e, WebRequest request) {
+		ErrorMessageDtoResponse eMessage = new ErrorMessageDtoResponse(HttpStatus.CONFLICT, e.getMessage());
+		return new ResponseEntity<Object>(eMessage, new HttpHeaders(), eMessage.getStatus());
+	}
 	
 	@ExceptionHandler(UserAlreadyExistsException.class)
 	public ResponseEntity<Object> handleUsernameAvailableException(UserAlreadyExistsException e, WebRequest request) {

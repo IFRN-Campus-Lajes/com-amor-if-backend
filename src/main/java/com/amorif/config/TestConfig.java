@@ -92,7 +92,7 @@ public class TestConfig implements CommandLineRunner {
 		userRepository.saveAll(Arrays.asList(u2));
 
 //		Criar ano letivo
-		AnoLetivo ano22 = AnoLetivo.builder().ano(2022).aberto(true).build();
+		AnoLetivo ano22 = AnoLetivo.builder().ano(2022).aberto(false).build();
 
 		AnoLetivo ano23 = AnoLetivo.builder().ano(2023).aberto(true).build();
 		anoLetivoRepository.saveAll(Arrays.asList(ano22, ano23));

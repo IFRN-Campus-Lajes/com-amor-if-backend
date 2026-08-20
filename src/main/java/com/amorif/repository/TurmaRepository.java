@@ -17,10 +17,13 @@ public interface TurmaRepository extends JpaRepository<Turma, Long> {
 	List<Turma> findAllByAnoLetivo(AnoLetivo anoLetivo);
 	
 	List<Turma> findAllByTurno(Integer turno);
+
+	List<Turma> findAllByTurnoAndAnoLetivo(Integer turno, AnoLetivo anoLetivo);
 	
 	@Query("SELECT t FROM Turma t " +
 		       "JOIN Pontuacao p ON p.turma.id = t.id " +
 		       "WHERE p.bimestre = :bimestre " +
+		       "AND p.anoLetivo = :anoLetivo " +
 		       "AND p.regra.id = :regraId " +
 		       "AND NOT EXISTS (" +
 		       "  SELECT 1 FROM Pontuacao p2 " +
@@ -33,7 +36,8 @@ public interface TurmaRepository extends JpaRepository<Turma, Long> {
 		       "HAVING COUNT(p) > 0")
 		List<Turma> findTurmasQualificadasParaBonus(@Param("regraId") Long regraId, 
 		                                            @Param("outrasRegrasIds") List<Long> outrasRegrasIds, 
-		                                            @Param("bimestre") Integer bimestre);
+		                                            @Param("bimestre") Integer bimestre,
+		                                            @Param("anoLetivo") AnoLetivo anoLetivo);
 
 
 }
