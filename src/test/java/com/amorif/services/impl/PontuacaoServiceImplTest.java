@@ -20,6 +20,7 @@ import com.amorif.exceptions.AnnualRuleException;
 import com.amorif.exceptions.AnnualRulePerStudentException;
 import com.amorif.exceptions.BimonthlyRuleException;
 import com.amorif.exceptions.BimonthlyRulePerStudentException;
+import com.amorif.exceptions.ClosedSchoolYearException;
 import com.amorif.exceptions.InvalidBimesterException;
 import com.amorif.exceptions.InvalidExtraBimesterException;
 import com.amorif.exceptions.InvalidFixedValueException;
@@ -84,6 +85,7 @@ public class PontuacaoServiceImplTest {
 	private Turma turma4;
 	private Regra regra;
 	private PontuacaoDtoRequest dtoRequest;
+	private AnoLetivo anoAtual;
 
 	private Senso ordenacaoSenso;
 	private Senso limpezaSenso;
@@ -130,7 +132,11 @@ public class PontuacaoServiceImplTest {
 
 		regra.setTipoRegra(tr1);
 
-		AnoLetivo anoAtual = AnoLetivo.builder().aberto(true).ano(2023).id(1L).build();
+		anoAtual = AnoLetivo.builder().aberto(true).ano(2023).id(1L).build();
+		turma.setAnoLetivo(anoAtual);
+		turma2.setAnoLetivo(anoAtual);
+		turma3.setAnoLetivo(anoAtual);
+		turma4.setAnoLetivo(anoAtual);
 
 		dtoRequest = new PontuacaoDtoRequest();
 		dtoRequest.setIdTurma(1L);
@@ -141,7 +147,8 @@ public class PontuacaoServiceImplTest {
 
 		when(anoLetivoRepository.getLastActiveAnoLetivo()).thenReturn(anoAtual);
 		when(turmaRepository.getReferenceById(dtoRequest.getIdTurma())).thenReturn(turma);
-		when(turmaRepository.findAllByTurno(TurnoEnum.MATUTINO.ordinal())).thenReturn(Arrays.asList(turma, turma2));
+		when(turmaRepository.findAllByTurnoAndAnoLetivo(TurnoEnum.MATUTINO.ordinal(), anoAtual))
+				.thenReturn(Arrays.asList(turma, turma2));
 		when(regraRepository.getReferenceById(dtoRequest.getIdRegra())).thenReturn(regra);
 		when(pontuacaoRepository.save(any(Pontuacao.class))).thenAnswer(invocation -> invocation.getArgument(0));
 		when(userRepository.findByMatricula("user")).thenReturn(Optional.of(user1));
@@ -168,6 +175,64 @@ public class PontuacaoServiceImplTest {
 		// Verifica se o lançamento foi feito com sucesso
 		assertNotNull(response);
 		assertEquals(dtoRequest.getPontos(), response.getPontos());
+	}
+
+	@Test
+	void throwPoints_WhenThereIsNoOpenSchoolYear_ShouldNotRegisterPoints() {
+		when(anoLetivoRepository.getLastActiveAnoLetivo()).thenReturn(null);
+
+		assertThrows(ClosedSchoolYearException.class, () -> pontuacaoService.throwPoints(dtoRequest));
+
+		verify(pontuacaoRepository, never()).save(any(Pontuacao.class));
+		verifyNoInteractions(regraRepository);
+	}
+
+	@Test
+	void throwPoints_WhenClassBelongsToAnotherSchoolYear_ShouldNotRegisterPoints() {
+		AnoLetivo anoFechado = AnoLetivo.builder().id(2L).ano(2022).aberto(false).build();
+		turma.setAnoLetivo(anoFechado);
+
+		assertThrows(ClosedSchoolYearException.class, () -> pontuacaoService.throwPoints(dtoRequest));
+
+		verify(pontuacaoRepository, never()).save(any(Pontuacao.class));
+	}
+
+	@Test
+	void currentSchoolYearQueries_WhenAllYearsAreClosed_ShouldReturnEmptyLists() {
+		when(anoLetivoRepository.getLastActiveAnoLetivo()).thenReturn(null);
+
+		assertTrue(pontuacaoService.pontosByLastActiveYear().isEmpty());
+		assertTrue(pontuacaoService.pointsToValidate().isEmpty());
+		assertTrue(pontuacaoService.appliedPointsOfLastActiveYear().isEmpty());
+		assertTrue(pontuacaoService.cancelledPointsOfLastActiveYear().isEmpty());
+		assertTrue(pontuacaoService.pontosByLoggedUser().isEmpty());
+		verify(pontuacaoRepository, never()).pontosByAno(anyLong());
+	}
+
+	@Test
+	void throwAutoPoints_WhenThereIsNoOpenSchoolYear_ShouldNotReprocessPoints() {
+		when(anoLetivoRepository.getLastActiveAnoLetivo()).thenReturn(null);
+
+		assertThrows(ClosedSchoolYearException.class, () -> pontuacaoService.throwAutoPoints(dtoRequest));
+
+		verify(pontuacaoRepository, never()).save(any(Pontuacao.class));
+		verifyNoInteractions(regraRepository);
+		verify(turmaRepository, never()).findTurmasQualificadasParaBonus(anyLong(), anyList(), anyInt(),
+				eq(anoAtual));
+	}
+
+	@Test
+	void deletePontuacao_WhenItsSchoolYearIsClosed_ShouldNotDeletePoints() {
+		AnoLetivo anoFechado = AnoLetivo.builder().id(1L).ano(2023).aberto(false).build();
+		Pontuacao pontuacao = new Pontuacao();
+		pontuacao.setAnoLetivo(anoFechado);
+		dtoRequest.setContador(1);
+		when(pontuacaoRepository.findByContadorAndTurma_Id(dtoRequest.getContador(), dtoRequest.getIdTurma()))
+				.thenReturn(pontuacao);
+
+		assertThrows(ClosedSchoolYearException.class, () -> pontuacaoService.deletePontuacao(dtoRequest));
+
+		verify(pontuacaoRepository, never()).deleteByContadorAndTurma_Id(any(), anyLong());
 	}
 
 	@Test
@@ -619,9 +684,11 @@ public class PontuacaoServiceImplTest {
 	    List<Turma> turmasOrdenacao = Arrays.asList(turma1);
 
 	    // Mock para regras específicas
-	    when(turmaRepository.findTurmasQualificadasParaBonus(16L, Arrays.asList(13L, 14L, 15L, 17L, 18L), 1))
+	    when(turmaRepository.findTurmasQualificadasParaBonus(16L, Arrays.asList(13L, 14L, 15L, 17L, 18L), 1,
+	            anoAtual))
 	            .thenReturn(turmasLimpeza);
-	    when(turmaRepository.findTurmasQualificadasParaBonus(10L, Arrays.asList(7L, 8L, 9L, 12L, 11L), 1))
+	    when(turmaRepository.findTurmasQualificadasParaBonus(10L, Arrays.asList(7L, 8L, 9L, 12L, 11L), 1,
+	            anoAtual))
 	            .thenReturn(turmasOrdenacao);
 
 	    when(regraRepository.findById(18L)).thenReturn(Optional.of(regraLimpeza));
@@ -655,9 +722,11 @@ public class PontuacaoServiceImplTest {
 	            new UsernamePasswordAuthenticationToken(userWithPermission, null, userWithPermission.getAuthorities()));
 
 	    // Mock para listas vazias
-	    when(turmaRepository.findTurmasQualificadasParaBonus(16L, Arrays.asList(13L, 14L, 15L, 17L), 1))
+	    when(turmaRepository.findTurmasQualificadasParaBonus(16L, Arrays.asList(13L, 14L, 15L, 17L), 1,
+	            anoAtual))
 	            .thenReturn(Collections.emptyList());
-	    when(turmaRepository.findTurmasQualificadasParaBonus(10L, Arrays.asList(7L, 8L, 9L, 12L), 1))
+	    when(turmaRepository.findTurmasQualificadasParaBonus(10L, Arrays.asList(7L, 8L, 9L, 12L), 1,
+	            anoAtual))
 	            .thenReturn(Collections.emptyList());
 	    
 	    when(regraRepository.findById(18L)).thenReturn(Optional.of(regraLimpeza));
@@ -685,9 +754,11 @@ public class PontuacaoServiceImplTest {
 	    List<Turma> turmasOrdenacao = Arrays.asList(turma1);
 
 	    // Mock para apenas uma regra qualificada
-	    when(turmaRepository.findTurmasQualificadasParaBonus(16L, Arrays.asList(13L, 14L, 15L, 17L, 18L), 1))
+	    when(turmaRepository.findTurmasQualificadasParaBonus(16L, Arrays.asList(13L, 14L, 15L, 17L, 18L), 1,
+	            anoAtual))
 	            .thenReturn(Collections.emptyList());
-	    when(turmaRepository.findTurmasQualificadasParaBonus(10L, Arrays.asList(7L, 8L, 9L, 12L, 11L), 1))
+	    when(turmaRepository.findTurmasQualificadasParaBonus(10L, Arrays.asList(7L, 8L, 9L, 12L, 11L), 1,
+	            anoAtual))
 	            .thenReturn(turmasOrdenacao);
 
 	    when(regraRepository.findById(18L)).thenReturn(Optional.of(regraLimpeza));
@@ -696,9 +767,6 @@ public class PontuacaoServiceImplTest {
 	    when(regraRepository.getReferenceById(18L)).thenReturn(regraLimpeza);
 	    when(regraRepository.getReferenceById(11L)).thenReturn(regraOrdenacao);
 	    
-	    AnoLetivo ultimoAnoLetivoAtivo = AnoLetivo.builder().ano(2023).build();
-	    when(anoLetivoRepository.getLastActiveAnoLetivo()).thenReturn(ultimoAnoLetivoAtivo);
-
 	    PontuacaoDtoRequest dtoRequest = new PontuacaoDtoRequest();
 	    dtoRequest.setBimestre(1);
 
@@ -734,7 +802,8 @@ public class PontuacaoServiceImplTest {
 	    Turma turmaInvalida = Turma.builder().id(null).nome("Turma X").build();
 	    List<Turma> turmas = Arrays.asList(turmaInvalida);
 
-	    when(turmaRepository.findTurmasQualificadasParaBonus(16L, Arrays.asList(13L, 14L, 15L, 17L), 1))
+	    when(turmaRepository.findTurmasQualificadasParaBonus(16L, Arrays.asList(13L, 14L, 15L, 17L), 1,
+	            anoAtual))
 	            .thenReturn(turmas);
 
 	    when(regraRepository.findById(11L)).thenReturn(Optional.of(regraLimpeza));

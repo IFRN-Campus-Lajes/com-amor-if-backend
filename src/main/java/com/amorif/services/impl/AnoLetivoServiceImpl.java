@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.amorif.dto.request.AnoLetivoDtoRequest;
 import com.amorif.dto.response.AnoLetivoDtoResponse;
@@ -36,11 +37,13 @@ public class AnoLetivoServiceImpl implements AnoLetivoService {
 	}
 
 	@Override
+	@Transactional
 	public AnoLetivoDtoResponse postAnoLetivo(AnoLetivoDtoRequest anoLetivoRequest) {
 		if (anoLetivoRequest.getId() != null) {
 
 			AnoLetivo ano = this.anoLetivoRepository.getReferenceById(anoLetivoRequest.getId());
 			if (ano != null) {
+				closeOtherSchoolYearsWhenOpening(anoLetivoRequest, ano.getId());
 				ano.setAno(anoLetivoRequest.getAnoLetivo());
 				ano.setAberto(anoLetivoRequest.isAberto());
 				ano = anoLetivoRepository.save(ano);
@@ -49,13 +52,28 @@ public class AnoLetivoServiceImpl implements AnoLetivoService {
 				throw new InvalidArgumentException("Ano letivo não existe!");
 			}
 		} else {
+			closeOtherSchoolYearsWhenOpening(anoLetivoRequest, null);
 			AnoLetivo ano = this.anoLetivoFromDto(anoLetivoRequest);
 			ano = anoLetivoRepository.save(ano);
 			return this.dtoFromAnoLetivo(ano);
 		}
 	}
 
+	private void closeOtherSchoolYearsWhenOpening(AnoLetivoDtoRequest request, Long requestedYearId) {
+		if (!request.isAberto()) {
+			return;
+		}
+
+		anoLetivoRepository.findAll().stream()
+				.filter(AnoLetivo::isAberto)
+				.filter(ano -> !ano.getId().equals(requestedYearId))
+				.forEach(ano -> ano.setAberto(false));
+	}
+
 	private AnoLetivoDtoResponse dtoFromAnoLetivo(AnoLetivo anoLetivo) {
+		if (anoLetivo == null) {
+			return null;
+		}
 		return AnoLetivoDtoResponse.builder().id(anoLetivo.getId()).anoLetivo(anoLetivo.getAno())
 				.status(anoLetivo.isAberto() ? "Aberto" : "Fechado").build();
 	}

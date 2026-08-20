@@ -29,6 +29,7 @@ import com.amorif.exceptions.AnnualRuleException;
 import com.amorif.exceptions.AnnualRulePerStudentException;
 import com.amorif.exceptions.BimonthlyRuleException;
 import com.amorif.exceptions.BimonthlyRulePerStudentException;
+import com.amorif.exceptions.ClosedSchoolYearException;
 import com.amorif.exceptions.InvalidBimesterException;
 import com.amorif.exceptions.InvalidExtraBimesterException;
 import com.amorif.exceptions.InvalidFixedValueException;
@@ -77,9 +78,8 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 	public List<PontuacaoDtoResponse> pontosByLastActiveYear() {
 		AnoLetivo anoLetivo = this.anoLetivoRepository.getLastActiveAnoLetivo();
 
-		Long idAno = anoLetivo.getId();
-
-		if (idAno > 0) {
+		if (anoLetivo != null && anoLetivo.getId() > 0) {
+			Long idAno = anoLetivo.getId();
 			return this.pontuacaoRepository.pontosByAno(idAno).stream().map(e -> dtoFromPontuacao(e))
 					.collect(Collectors.toList());
 		}
@@ -91,9 +91,8 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 	public List<PontuacaoDtoResponse> pointsToValidate() {
 		AnoLetivo anoLetivo = this.anoLetivoRepository.getLastActiveAnoLetivo();
 
-		Long idAno = anoLetivo.getId();
-
-		if (idAno > 0) {
+		if (anoLetivo != null && anoLetivo.getId() > 0) {
+			Long idAno = anoLetivo.getId();
 			return this.pontuacaoRepository.pontosByAno(idAno).stream().filter(p -> !p.isAplicado() && !p.isAnulado()) // Filtra
 																														// os
 																														// pontos
@@ -113,9 +112,8 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 	public List<PontuacaoDtoResponse> appliedPointsOfLastActiveYear() {
 		AnoLetivo anoLetivo = this.anoLetivoRepository.getLastActiveAnoLetivo();
 
-		Long idAno = anoLetivo.getId();
-
-		if (idAno > 0) {
+		if (anoLetivo != null && anoLetivo.getId() > 0) {
+			Long idAno = anoLetivo.getId();
 			return this.pontuacaoRepository.pontosByAno(idAno).stream().filter(p -> p.isAplicado()) // Filtra os pontos
 																									// que não foram
 																									// aplicados nem
@@ -130,9 +128,8 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 	public List<PontuacaoDtoResponse> cancelledPointsOfLastActiveYear() {
 		AnoLetivo anoLetivo = this.anoLetivoRepository.getLastActiveAnoLetivo();
 
-		Long idAno = anoLetivo.getId();
-
-		if (idAno > 0) {
+		if (anoLetivo != null && anoLetivo.getId() > 0) {
+			Long idAno = anoLetivo.getId();
 			return this.pontuacaoRepository.pontosByAno(idAno).stream().filter(p -> p.isAnulado()) // Filtra os pontos
 																									// que não foram
 																									// aplicados nem
@@ -147,7 +144,7 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 	public List<PontuacaoDtoResponse> pontosByLoggedUser() {
 		AnoLetivo anoLetivo = this.anoLetivoRepository.getLastActiveAnoLetivo();
 		
-		if(anoLetivo.getId() > 0) {
+		if(anoLetivo != null && anoLetivo.getId() > 0) {
 			UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 			User user = userRepository.findByMatricula(userDetails.getUsername()).get();
 			
@@ -159,6 +156,7 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 
 	@Override
 	public List<PontuacaoDtoResponse> throwAutoPoints(PontuacaoDtoRequest dtoRequest) {
+		AnoLetivo anoAtual = requireOpenSchoolYear();
 		List<PontuacaoDtoResponse> pontuacoes = new ArrayList<>();
 
 		// IDs das regras de qualificação
@@ -181,19 +179,19 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 
 		// Verificar as turmas qualificadas para limpeza e ordenação excelentes
 		List<Turma> turmasLimpezaExcelente = turmaRepository.findTurmasQualificadasParaBonus(regraLimpezaExcelenteId,
-				regrasLimpezaConflitantes, dtoRequest.getBimestre());
+				regrasLimpezaConflitantes, dtoRequest.getBimestre(), anoAtual);
 		List<Turma> turmasOrdenacaoExcelente = turmaRepository.findTurmasQualificadasParaBonus(
-				regraOrdenacaoExcelenteId, regrasOrdenacaoConflitantes, dtoRequest.getBimestre());
+				regraOrdenacaoExcelenteId, regrasOrdenacaoConflitantes, dtoRequest.getBimestre(), anoAtual);
 
 		// Lançar pontuações para as turmas qualificadas
-		pontuacoes.addAll(lancarPontuacoesAutomaticas(turmasLimpezaExcelente, regraBonusLimpeza, dtoRequest));
-		pontuacoes.addAll(lancarPontuacoesAutomaticas(turmasOrdenacaoExcelente, regraBonusOrdenacao, dtoRequest));
+		pontuacoes.addAll(lancarPontuacoesAutomaticas(turmasLimpezaExcelente, regraBonusLimpeza, dtoRequest, anoAtual));
+		pontuacoes.addAll(lancarPontuacoesAutomaticas(turmasOrdenacaoExcelente, regraBonusOrdenacao, dtoRequest, anoAtual));
 
 		return pontuacoes;
 	}
 
 	private List<PontuacaoDtoResponse> lancarPontuacoesAutomaticas(List<Turma> turmasQualificadas, Regra regraBonus,
-			PontuacaoDtoRequest dtoRequest) {
+			PontuacaoDtoRequest dtoRequest, AnoLetivo anoAtual) {
 		List<PontuacaoDtoResponse> responses = new ArrayList<>();
 		for (Turma turma : turmasQualificadas) {
 			// Preenchendo os dados para lançamento de pontos
@@ -204,7 +202,7 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 			dtoRequest.setMotivacao(regraBonus.getSenso().getDescricao() + " " + regraBonus.getDescricao());
 
 			// Lançando os pontos para a turma
-			PontuacaoDtoResponse response = throwPointsForOne(dtoRequest);
+			PontuacaoDtoResponse response = throwPointsForOne(dtoRequest, anoAtual);
 			responses.add(response);
 		}
 
@@ -213,6 +211,7 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 
 	@Override
 	public List<PontuacaoDtoResponse> throwPoints(PontuacaoDtoRequest dtoRequest) {
+		AnoLetivo anoAtual = requireOpenSchoolYear();
 		List<PontuacaoDtoResponse> pontuacoes = new ArrayList<PontuacaoDtoResponse>();
 		Regra regra = this.regraRepository.getReferenceById(dtoRequest.getIdRegra());
 		TipoRegra tipoRegra = regra.getTipoRegra();
@@ -222,31 +221,31 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 			Integer turno = dtoRequest.getTurno();
 
 			if (turno != null && turno >= 0 && turno < TurnoEnum.values().length) {
-				List<Turma> turmas = turmaRepository.findAllByTurno(turno);
+				List<Turma> turmas = turmaRepository.findAllByTurnoAndAnoLetivo(turno, anoAtual);
 
 				for (Turma turma : turmas) {
 					dtoRequest.setIdTurma(turma.getId());
-					PontuacaoDtoResponse response = throwPointsForOne(dtoRequest);
+					PontuacaoDtoResponse response = throwPointsForOne(dtoRequest, anoAtual);
 					pontuacoes.add(response);
 				}
 			} else {
 				throw new InvalidTurnException("O atributo turno é nulo ou não foi passado corretamente");
 			}
 		} else {
-			pontuacoes.add(throwPointsForOne(dtoRequest));
+			pontuacoes.add(throwPointsForOne(dtoRequest, anoAtual));
 		}
 
 		return pontuacoes;
 	}
 
-	public PontuacaoDtoResponse throwPointsForOne(PontuacaoDtoRequest dtoRequest) {
-		UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		User user = userRepository.findByMatricula(userDetails.getUsername()).get();
+	private PontuacaoDtoResponse throwPointsForOne(PontuacaoDtoRequest dtoRequest, AnoLetivo anoAtual) {
 		Turma turma = this.turmaRepository.getReferenceById(dtoRequest.getIdTurma());
 		Regra regra = this.regraRepository.getReferenceById(dtoRequest.getIdRegra());
-		AnoLetivo anoAtual = this.anoLetivoRepository.getLastActiveAnoLetivo();
 
 		if (turma != null && regra != null && anoAtual != null) {
+			ensureClassBelongsToSchoolYear(turma, anoAtual);
+			UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+			User user = userRepository.findByMatricula(userDetails.getUsername()).get();
 
 			checkUserPermissionToReleasePoints(regra);
 
@@ -287,6 +286,8 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 			throw new PointsNotFoundException("Pontuação não encontrada");
 		}
 
+		ensureSchoolYearIsOpen(pontuacao.getAnoLetivo());
+
 		// Verifica se a pontuação está anulada ou aplicada
 		if (pontuacao.isAnulado() || pontuacao.isAplicado()) {
 			throw new PointsAlreadyCancelledOrAppliedException(
@@ -307,6 +308,26 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 		// Deleta a pontuação
 		pontuacaoRepository.deleteByContadorAndTurma_Id(pontuacaoDtoRequest.getContador(),
 				pontuacaoDtoRequest.getIdTurma());
+	}
+
+	private AnoLetivo requireOpenSchoolYear() {
+		AnoLetivo anoLetivo = anoLetivoRepository.getLastActiveAnoLetivo();
+		ensureSchoolYearIsOpen(anoLetivo);
+		return anoLetivo;
+	}
+
+	private void ensureSchoolYearIsOpen(AnoLetivo anoLetivo) {
+		if (anoLetivo == null || !anoLetivo.isAberto()) {
+			throw new ClosedSchoolYearException(
+					"Não é possível alterar pontuações porque não existe ano letivo aberto.");
+		}
+	}
+
+	private void ensureClassBelongsToSchoolYear(Turma turma, AnoLetivo anoLetivo) {
+		if (turma.getAnoLetivo() == null || !anoLetivo.equals(turma.getAnoLetivo())) {
+			throw new ClosedSchoolYearException(
+					"Não é possível alterar pontuações de uma turma que não pertence ao ano letivo aberto.");
+		}
 	}
 
 	private PontuacaoDtoResponse dtoFromPontuacao(Pontuacao pontuacao) {
