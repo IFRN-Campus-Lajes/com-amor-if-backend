@@ -94,26 +94,42 @@ public class TestConfig implements CommandLineRunner {
 //		Criar ano letivo
 		AnoLetivo ano22 = AnoLetivo.builder().ano(2022).aberto(false).build();
 
-		AnoLetivo ano23 = AnoLetivo.builder().ano(2023).aberto(true).build();
+		AnoLetivo ano23 = AnoLetivo.builder().ano(2026).aberto(true).build();
 		anoLetivoRepository.saveAll(Arrays.asList(ano22, ano23));
 
 //		Criar turmas
-		Turma turmaA = Turma.builder().id(1L).anoLetivo(ano23).nome("ADM 1VA").descricao("Descricao da turma.")
+		Turma turmaA = Turma.builder().id(1L).anoLetivo(ano23).nome("INFO 1MB").descricao("INFOCODERS")
 				.turno(TurnoEnum.VESPERTINO.ordinal()).build();
 
-		Turma turmaB = Turma.builder().id(2L).anoLetivo(ano23).nome("ADM 1VB").descricao("Descricao da turma.")
+		Turma turmaB = Turma.builder().id(2L).anoLetivo(ano23).nome("INFO 3M").descricao("INFORJÁVEIS")
 				.turno(TurnoEnum.VESPERTINO.ordinal()).build();
 
-		Turma turmaC = Turma.builder().id(3L).anoLetivo(ano23).nome("INFO 1MA").descricao("Descricao da turma.")
+		Turma turmaC = Turma.builder().id(3L).anoLetivo(ano23).nome("ADM 1V").descricao("ADMINÍFICOS")
 				.turno(TurnoEnum.MATUTINO.ordinal()).build();
 
-		Turma turmaD = Turma.builder().id(4L).anoLetivo(ano23).nome("INFO 2MA").descricao("Descricao da turma.")
+		Turma turmaD = Turma.builder().id(4L).anoLetivo(ano23).nome("ADM 2M").descricao("ADMÍSTICOS")
 				.turno(TurnoEnum.MATUTINO.ordinal()).build();
 
-		Turma turmaE = Turma.builder().id(5L).anoLetivo(ano23).nome("ADM 4VA").descricao("Descricao da turma.")
+		Turma turmaE = Turma.builder().id(5L).anoLetivo(ano23).nome("INFO 1MA").descricao("CODIFICADOS")
 				.turno(TurnoEnum.VESPERTINO.ordinal()).build();
 
-		turmaRepository.saveAll(Arrays.asList(turmaA, turmaB, turmaC, turmaD, turmaE));
+		Turma turmaF = Turma.builder().id(6L).anoLetivo(ano23).nome("INFO 2VA").descricao("INFORWORDS")
+				.turno(TurnoEnum.VESPERTINO.ordinal()).build();
+		Turma turmaG = Turma.builder().id(7L).anoLetivo(ano23).nome("INFO 4VA").descricao("INFOMINDS")
+				.turno(TurnoEnum.VESPERTINO.ordinal()).build();
+		Turma turmaH = Turma.builder().id(8L).anoLetivo(ano23).nome("ADM 3M").descricao("ADMINAUTAS")
+				.turno(TurnoEnum.MATUTINO.ordinal()).build();
+		Turma turmaI = Turma.builder().id(9L).anoLetivo(ano23).nome("INFO 2MB").descricao("ALGORÍTMICOS")
+				.turno(TurnoEnum.MATUTINO.ordinal()).build();
+		Turma turmaJ = Turma.builder().id(10L).anoLetivo(ano23).nome("ADM 2V").descricao("VISIONÁRIOS")
+				.turno(TurnoEnum.VESPERTINO.ordinal()).build();
+		Turma turmaK = Turma.builder().id(11L).anoLetivo(ano23).nome("INFO 3V").descricao("DEBUGGERS")
+				.turno(TurnoEnum.VESPERTINO.ordinal()).build();
+		Turma turmaL = Turma.builder().id(12L).anoLetivo(ano23).nome("ADM 4M").descricao("PROTAGONISTAS")
+				.turno(TurnoEnum.MATUTINO.ordinal()).build();
+
+		turmaRepository.saveAll(Arrays.asList(turmaA, turmaB, turmaC, turmaD, turmaE, turmaF, turmaG, turmaH, turmaI,
+				turmaJ, turmaK, turmaL));
 
 		// Criar sensos
 		Senso senso1 = Senso.builder().descricao("Utilização").build();
@@ -496,6 +512,23 @@ public class TestConfig implements CommandLineRunner {
 		pontuacaoRepository.saveAll(Arrays.asList(pontuacao1, pontuacao2, pontuacao3, pontuacao4, pontuacao5,
 				pontuacao6, pontuacao7, pontuacao8, pontuacao9, pontuacao10, pontuacao11, pontuacao12, pontuacao13,
 				pontuacao14, pontuacao15, pontuacao16, pontuacao17, pontuacao18));
+
+		// Pontuações volumosas para visualizar o ranking com uma quantidade realista de turmas.
+		// Esta configuração só é carregada nos perfis dev e test.
+		List<Turma> turmasRanking = Arrays.asList(turmaA, turmaB, turmaC, turmaD, turmaE, turmaF, turmaG, turmaH,
+				turmaI, turmaJ, turmaK, turmaL);
+		List<Integer> pontosRanking = Arrays.asList(950, 900, 904, 854, 828, 779, 718, 681, 643, 597, 552, 488);
+		List<Pontuacao> pontuacoesRanking = new ArrayList<>();
+
+		for (int i = 0; i < turmasRanking.size(); i++) {
+			Turma turma = turmasRanking.get(i);
+			pontuacoesRanking.add(Pontuacao.builder().contador(i < 2 ? 10 : 1).turma(turma).regra(regras.get(0))
+					.anoLetivo(ano23).user(u1).bimestre(1).pontos(pontosRanking.get(i))
+					.motivacao("Pontuação de demonstração do ranking").aplicado(true).anulado(false).data(new Date())
+					.build());
+		}
+
+		pontuacaoRepository.saveAll(pontuacoesRanking);
 
 	}
 
