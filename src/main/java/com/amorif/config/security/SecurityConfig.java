@@ -12,6 +12,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -30,7 +31,7 @@ public class SecurityConfig {
 
 	private final String[] WHITE_LIST = new String[] { "/api/auth/**", "/api/public/**", "/api/pontuacao/pontosDoAnoCorrente" };
 
-	private final String[] AVAL_LIST = new String[] { "/api/pontuacao/**", "/api/anoletivo/**", "/api/turma/**", "/api/regras/**" };
+	private final String[] AVAL_LIST = new String[] { "/api/pontuacao/**", "/api/anoletivo/**", "/api/turma/**", "/api/regras/**", "/api/olimpiadas/**" };
 
 	private final String[] MANAGER_LIST = new String[] { "/api/manager/**" };
 
@@ -64,6 +65,15 @@ public class SecurityConfig {
 						.hasRole(this.getRole(RoleEnum.ROLE_ADMINISTRADOR.toString()))
 						.requestMatchers("/api/turma/turma")
 						.hasRole(this.getRole(RoleEnum.ROLE_ADMINISTRADOR.toString()))
+						.requestMatchers(HttpMethod.POST, "/api/olimpiadas/**")
+						.hasAnyRole(this.getRole(RoleEnum.ROLE_ADMINISTRADOR.toString()),
+								this.getRole(RoleEnum.ROLE_COORDENADOR_CURSO.toString()))
+						.requestMatchers(HttpMethod.PUT, "/api/olimpiadas/**")
+						.hasAnyRole(this.getRole(RoleEnum.ROLE_ADMINISTRADOR.toString()),
+								this.getRole(RoleEnum.ROLE_COORDENADOR_CURSO.toString()))
+						.requestMatchers(HttpMethod.DELETE, "/api/olimpiadas/**")
+						.hasAnyRole(this.getRole(RoleEnum.ROLE_ADMINISTRADOR.toString()),
+								this.getRole(RoleEnum.ROLE_COORDENADOR_CURSO.toString()))
 						.requestMatchers(AVAL_LIST).hasAnyRole(Stream.concat(
 					            getRolesByCategory("Aval").stream(), // First list
 					            getRolesByCategory("Admin").stream() // Second list

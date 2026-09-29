@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.amorif.dto.response.AnoLetivoDtoResponse;
 import com.amorif.dto.response.PontuacaoDtoResponse;
+import com.amorif.dto.response.OlimpiadaDtoResponse;
 import com.amorif.dto.response.RegraDtoResponse;
 import com.amorif.dto.response.TurmaDtoResponse;
 import com.amorif.dto.response.UserDtoResponse;
@@ -93,6 +94,7 @@ public class PublicPageServiceImpl implements PublicPageService {
 				.descricao(pontuacao.getMotivacao()).pontos(pontuacao.getPontos())
 				.operacao(pontuacao.getRegra().getOperacao()).aplicado(pontuacao.isAplicado())
 				.createdAt(pontuacao.getData()).regra(regraDto).anulado(pontuacao.isAnulado())
+				.olimpiada(OlimpiadaDtoResponse.fromOlimpiada(pontuacao.getOlimpiada()))
 				.matriculaAluno(pontuacao.getMatriculaAluno()).idUser(pontuacao.getUser().getId())
 				.criadoPor(UserDtoResponse.builder().matricula(pontuacao.getUser().getMatricula())
 						.email(pontuacao.getUser().getEmail()).username(pontuacao.getUser().getNome()).build())

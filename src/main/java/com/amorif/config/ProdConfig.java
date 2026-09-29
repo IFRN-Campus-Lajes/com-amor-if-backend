@@ -108,7 +108,9 @@ public class ProdConfig implements CommandLineRunner {
 				TipoRegra.builder().descricao("Valor Fixo por bimestre").fixo(true).temAluno(false)
 						.frequencia(FrequenciaRegraEnum.BIMESTRAL.ordinal()).build(),
 				TipoRegra.builder().descricao("Valor Variável por turno").fixo(false).temAluno(false)
-						.frequencia(FrequenciaRegraEnum.AVULSO.ordinal()).porTurno(true).build());
+						.frequencia(FrequenciaRegraEnum.AVULSO.ordinal()).porTurno(true).build(),
+				TipoRegra.builder().descricao("Valor Fixo por aluno e olimpíada por ano letivo").fixo(true)
+						.temAluno(true).temOlimpiada(true).frequencia(FrequenciaRegraEnum.ANUAL.ordinal()).build());
 
 		List<TipoRegra> tiposParaSalvar = novosTipos.stream()
 				.filter(tipo -> !tiposExistentes.contains(tipo.getDescricao())).collect(Collectors.toList());
@@ -138,6 +140,8 @@ public class ProdConfig implements CommandLineRunner {
 		TipoRegra tipoVariavel = tipoRegraRepository.findByDescricao("Valor Variável");
 		TipoRegra tipoFixoPorBimestre = tipoRegraRepository.findByDescricao("Valor Fixo por bimestre");
 		TipoRegra tipoVariavelPorTurno = tipoRegraRepository.findByDescricao("Valor Variável por turno");
+		TipoRegra tipoPorAlunoOlimpiadaAno = tipoRegraRepository
+				.findByDescricao("Valor Fixo por aluno e olimpíada por ano letivo");
 
 		// Obter instâncias de Role
 		Role bibliotecario = roleRepository.getByName("ROLE_BIBLIOTECARIO");
@@ -269,7 +273,11 @@ public class ProdConfig implements CommandLineRunner {
 
 				Regra.builder().descricao(
 						"2 pontos por aluno de cada turma que participar de olimpíadas coordenadas pelo professor no bimestre extra")
-						.operacao("SUM").valorMinimo(2).senso(saude).tipoRegra(tipoPorAlunoAno)
+						.operacao("SUM").valorMinimo(2).senso(saude).tipoRegra(tipoPorAlunoAno).ativo(false)
+						.roles(Arrays.asList(coordenadorCurso, administrador)).build(),
+
+				Regra.builder().descricao("2 pontos por aluno em cada olimpíada")
+						.operacao("SUM").valorMinimo(2).senso(saude).tipoRegra(tipoPorAlunoOlimpiadaAno)
 						.roles(Arrays.asList(coordenadorCurso, administrador)).build(),
 
 				Regra.builder().descricao("1 ponto por aluno da turma em cada bimestre por atuação em monitoria")

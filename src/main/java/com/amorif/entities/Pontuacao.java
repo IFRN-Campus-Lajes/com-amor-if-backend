@@ -55,6 +55,10 @@ public class Pontuacao implements Serializable {
 	@JoinColumn(name = "created_by")
 	private User user;
 
+	@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
+	@JoinColumn(name = "olimpiada_id", nullable = true)
+	private Olimpiada olimpiada;
+
 	private Integer bimestre;
 	
 	private Integer pontos;
@@ -91,7 +95,7 @@ public class Pontuacao implements Serializable {
 		super();
 	}
 
-	public Pontuacao(Integer contador, Turma turma, Regra regra, AnoLetivo anoLetivo, User user, int bimestre,
+	public Pontuacao(Integer contador, Turma turma, Regra regra, AnoLetivo anoLetivo, User user, Olimpiada olimpiada, int bimestre,
 			Integer pontos, String motivacao, String matriculaAluno, boolean aplicado, boolean anulado, Date data) {
 		super();
 		this.contador = contador;
@@ -99,6 +103,7 @@ public class Pontuacao implements Serializable {
 		this.regra = regra;
 		this.anoLetivo = anoLetivo;
 		this.user = user;
+		this.olimpiada = olimpiada;
 		this.bimestre = bimestre;
 		this.pontos = pontos;
 		this.motivacao = motivacao;

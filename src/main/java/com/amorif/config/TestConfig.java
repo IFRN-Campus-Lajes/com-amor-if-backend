@@ -160,8 +160,10 @@ public class TestConfig implements CommandLineRunner {
 				.frequencia(FrequenciaRegraEnum.BIMESTRAL.ordinal()).build();
 		TipoRegra tipo10 = TipoRegra.builder().descricao("Valor Variável por turno").fixo(false).temAluno(false)
 				.frequencia(FrequenciaRegraEnum.AVULSO.ordinal()).porTurno(true).build();
+		TipoRegra tipo11 = TipoRegra.builder().descricao("Valor Fixo por aluno e olimpíada por ano letivo")
+				.fixo(true).temAluno(true).temOlimpiada(true).frequencia(FrequenciaRegraEnum.ANUAL.ordinal()).build();
 
-		tipoRegraRepository.saveAll(Arrays.asList(tipo1, tipo2, tipo3, tipo4, tipo5, tipo6, tipo7, tipo8, tipo9, tipo10));
+		tipoRegraRepository.saveAll(Arrays.asList(tipo1, tipo2, tipo3, tipo4, tipo5, tipo6, tipo7, tipo8, tipo9, tipo10, tipo11));
 
 		// População de regras
 		// Obter instâncias de Senso
@@ -183,6 +185,8 @@ public class TestConfig implements CommandLineRunner {
 		TipoRegra tipoVariavel = tipoRegraRepository.findByDescricao("Valor Variável");
 		TipoRegra tipoFixoPorBimestre = tipoRegraRepository.findByDescricao("Valor Fixo por bimestre");
 		TipoRegra tipoVariavelPorTurno = tipoRegraRepository.findByDescricao("Valor Variável por turno");
+		TipoRegra tipoPorAlunoOlimpiadaAno = tipoRegraRepository
+				.findByDescricao("Valor Fixo por aluno e olimpíada por ano letivo");
 
 		// Obter instâncias de Role
 		Role bibliotecario = roleRepository.getByName("ROLE_BIBLIOTECARIO");
@@ -312,7 +316,7 @@ public class TestConfig implements CommandLineRunner {
 
 				Regra.builder().descricao(
 						"2 pontos por aluno de cada turma que participar de olimpíadas coordenadas pelo professor no bimestre extra")
-						.operacao("SUM").valorMinimo(2).senso(saude).tipoRegra(tipoPorAlunoAno)
+						.operacao("SUM").valorMinimo(2).senso(saude).tipoRegra(tipoPorAlunoAno).ativo(false)
 						.roles(Arrays.asList(coordenadorCurso, administrador)).build(),
 
 				Regra.builder().descricao("1 ponto por aluno da turma em cada bimestre por atuação em monitoria")
@@ -397,6 +401,9 @@ public class TestConfig implements CommandLineRunner {
 		regras.add(Regra.builder().descricao("1 ponto por aluno da turma que realizar Caracterização Socioeconômica")
 				.operacao("SUM").valorMinimo(1).senso(saude).tipoRegra(tipoPorAlunoAno)
 				.roles(Arrays.asList(assistenciaEstudantil, administrador)).build());
+		regras.add(Regra.builder().descricao("2 pontos por aluno em cada olimpíada")
+				.operacao("SUM").valorMinimo(2).senso(saude).tipoRegra(tipoPorAlunoOlimpiadaAno)
+				.roles(Arrays.asList(coordenadorCurso, administrador)).build());
 
 		RegraCategorias.aplicar(regras);
 		regraRepository.saveAll(regras);

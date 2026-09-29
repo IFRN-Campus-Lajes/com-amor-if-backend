@@ -48,6 +48,12 @@ import jakarta.servlet.http.HttpServletRequest;
 @Service
 public class AuthServiceImpl implements AuthService {
 
+	private static final List<String> ADMIN_FUNCTIONS = List.of(
+			"FG2 - COTIC/LAJ",
+			"CD2 - DG/LAJ",
+			"SUB-CHEFIA - DG/LAJ",
+			"CD4 - DIAC/LAJ");
+
 	@Value("${SUAP_USER_INFO_URL}")
 	private String SUAP_USER_INFO_URL;
 
@@ -276,11 +282,6 @@ public class AuthServiceImpl implements AuthService {
 		setorSuapRoles.put("COEX/LAJ", RoleEnum.ROLE_COEXPEIN.toString());
 	    setorSuapRoles.put("DIAD/LAJ", RoleEnum.ROLE_DIAD.toString());
 
-	    // Funções específicas para ADMINISTRADOR
-	    List<String> adminFunctions = Arrays.asList(
-	        "FG0002 - COTIC/LAJ", "CD0002 - DG/LAJ", "SUB-CHEFIA - DG/LAJ", "CD0004 - DIAC/LAJ"
-	    );
-
 	    // Condições para atribuição de roles
 	    if (dto.getTipoVinculo().contains("Servidor") && !dto.getVinculo().getCategoria().contains("estagiario")) {
 	        // Adicionando roles com base no setorSuap
@@ -291,7 +292,7 @@ public class AuthServiceImpl implements AuthService {
 	        }
 
 	        // Verificando se a função está na lista de administradores
-	        if (adminFunctions.stream().anyMatch(funcao -> Arrays.asList(dto.getVinculo().getFuncao()).contains(funcao))) {
+	        if (hasAdminFunction(dto.getVinculo().getFuncao())) {
 	            user.getFuncoes().add(this.roleRepository.getByName(RoleEnum.ROLE_ADMINISTRADOR.toString()));
 	        }
 
@@ -303,6 +304,10 @@ public class AuthServiceImpl implements AuthService {
 	    	// Adiciona ROLE_ALUNO por padrão se não for servidor
 	    	user.getFuncoes().add(this.roleRepository.getByName(RoleEnum.ROLE_ALUNO.toString()));
 	    }
+	}
+
+	static boolean hasAdminFunction(String[] functions) {
+		return Arrays.stream(functions).anyMatch(ADMIN_FUNCTIONS::contains);
 	}
 
 }
