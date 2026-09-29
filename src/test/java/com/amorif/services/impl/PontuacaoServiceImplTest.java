@@ -10,6 +10,7 @@ import com.amorif.dto.response.PontuacaoDtoResponse;
 import com.amorif.entities.AnoLetivo;
 import com.amorif.entities.FrequenciaRegraEnum;
 import com.amorif.entities.Pontuacao;
+import com.amorif.entities.Olimpiada;
 import com.amorif.entities.Regra;
 import com.amorif.entities.Role;
 import com.amorif.entities.Senso;
@@ -29,6 +30,7 @@ import com.amorif.exceptions.RuleNotFoundException;
 import com.amorif.exceptions.UserHasNoPermitedRoleException;
 import com.amorif.repository.AnoLetivoRepository;
 import com.amorif.repository.PontuacaoRepository;
+import com.amorif.repository.OlimpiadaRepository;
 import com.amorif.repository.RegraRepository;
 import com.amorif.repository.TokenRepository;
 import com.amorif.repository.TurmaRepository;
@@ -78,6 +80,9 @@ public class PontuacaoServiceImplTest {
 
 	@MockBean
 	private UserRepository userRepository;
+
+	@MockBean
+	private OlimpiadaRepository olimpiadaRepository;
 
 	private Turma turma;
 	private Turma turma2;
@@ -668,6 +673,53 @@ public class PontuacaoServiceImplTest {
 
 		// Verifica se o método do repositório foi chamado com os parâmetros corretos
 		verify(pontuacaoRepository).existsByYearAndRulePerStudent(1L, regra.getId(), turma.getId(), "20151204010002");
+	}
+
+	@Test
+	void shouldAllowSameStudentInDifferentOlympiads() {
+		User userWithPermission = new User("user", "password",
+				Collections.singleton(new SimpleGrantedAuthority("ROLE_APOIO_ACADEMICO")));
+		SecurityContextHolder.getContext().setAuthentication(
+				new UsernamePasswordAuthenticationToken(userWithPermission, null, userWithPermission.getAuthorities()));
+
+		TipoRegra olympiadType = TipoRegra.builder().fixo(true).temAluno(true).temOlimpiada(true)
+				.frequencia(FrequenciaRegraEnum.ANUAL.ordinal()).build();
+		regra.setTipoRegra(olympiadType);
+		regra.setValorMinimo(2);
+		dtoRequest.setPontos(2);
+		dtoRequest.setMatriculaAluno("20151204010002");
+		dtoRequest.setIdOlimpiada(10L);
+		Olimpiada olimpiada = Olimpiada.builder().id(10L).nome("OBMEP").build();
+		when(olimpiadaRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(olimpiada));
+		when(pontuacaoRepository.existsActiveOlympiadParticipation(1L, 1L, 10L, "20151204010002"))
+				.thenReturn(false);
+
+		PontuacaoDtoResponse response = pontuacaoService.throwPoints(dtoRequest).getFirst();
+
+		assertEquals("OBMEP", response.getOlimpiada().getNome());
+		verify(pontuacaoRepository).existsActiveOlympiadParticipation(1L, 1L, 10L, "20151204010002");
+	}
+
+	@Test
+	void shouldRejectDuplicateStudentParticipationInSameOlympiad() {
+		User userWithPermission = new User("user", "password",
+				Collections.singleton(new SimpleGrantedAuthority("ROLE_APOIO_ACADEMICO")));
+		SecurityContextHolder.getContext().setAuthentication(
+				new UsernamePasswordAuthenticationToken(userWithPermission, null, userWithPermission.getAuthorities()));
+
+		regra.setTipoRegra(TipoRegra.builder().fixo(true).temAluno(true).temOlimpiada(true)
+				.frequencia(FrequenciaRegraEnum.ANUAL.ordinal()).build());
+		regra.setValorMinimo(2);
+		dtoRequest.setPontos(2);
+		dtoRequest.setMatriculaAluno("20151204010002");
+		dtoRequest.setIdOlimpiada(10L);
+		when(olimpiadaRepository.findByIdForUpdate(10L))
+				.thenReturn(Optional.of(Olimpiada.builder().id(10L).nome("OBMEP").build()));
+		when(pontuacaoRepository.existsActiveOlympiadParticipation(1L, 1L, 10L, "20151204010002"))
+				.thenReturn(true);
+
+		assertThrows(AnnualRulePerStudentException.class, () -> pontuacaoService.throwPoints(dtoRequest));
+		verify(pontuacaoRepository, never()).save(any(Pontuacao.class));
 	}
 
 	@Test

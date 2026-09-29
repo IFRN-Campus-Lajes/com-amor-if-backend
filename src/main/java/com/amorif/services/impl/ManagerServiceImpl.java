@@ -12,6 +12,7 @@ import com.amorif.dto.request.PontuacaoDtoRequest;
 import com.amorif.dto.request.TurmaDtoRequest;
 import com.amorif.dto.response.AnoLetivoDtoResponse;
 import com.amorif.dto.response.PontuacaoDtoResponse;
+import com.amorif.dto.response.OlimpiadaDtoResponse;
 import com.amorif.dto.response.TurmaDtoResponse;
 import com.amorif.entities.AnoLetivo;
 import com.amorif.entities.Pontuacao;
@@ -20,6 +21,7 @@ import com.amorif.exceptions.InvalidArgumentException;
 import com.amorif.exceptions.ClosedSchoolYearException;
 import com.amorif.repository.AnoLetivoRepository;
 import com.amorif.repository.PontuacaoRepository;
+import com.amorif.repository.OlimpiadaRepository;
 import com.amorif.repository.TurmaRepository;
 import com.amorif.services.ManagerService;
 
@@ -34,12 +36,14 @@ public class ManagerServiceImpl implements ManagerService {
 	private final TurmaRepository turmaRepository;
 	private final AnoLetivoRepository anoLetivoRepository;
 	private final PontuacaoRepository pontuacaoRepository;
+	private final OlimpiadaRepository olimpiadaRepository;
 
 	public ManagerServiceImpl(TurmaRepository turmaRepository, AnoLetivoRepository anoLetivoRepository,
-			PontuacaoRepository pontuacaoRepository) {
+			PontuacaoRepository pontuacaoRepository, OlimpiadaRepository olimpiadaRepository) {
 		this.turmaRepository = turmaRepository;
 		this.anoLetivoRepository = anoLetivoRepository;
 		this.pontuacaoRepository = pontuacaoRepository;
+		this.olimpiadaRepository = olimpiadaRepository;
 	}
 
 	@Override
@@ -62,12 +66,14 @@ public class ManagerServiceImpl implements ManagerService {
 	}
 
 	@Override
+	@Transactional
 	public PontuacaoDtoResponse approvePoints(PontuacaoDtoRequest request) {
 		Turma turma = this.turmaRepository.getReferenceById(request.getIdTurma());
 		if (turma != null) {
 			Pontuacao pontuacao = this.pontuacaoRepository.getByContadorTurma(request.getContador(), turma);
 			if (pontuacao != null) {
 				ensureSchoolYearIsOpen(pontuacao);
+				ensureOlympiadParticipationIsAvailable(pontuacao);
 				pontuacao.setAplicado(true);
 				pontuacao.setAnulado(false);
 				pontuacao = this.pontuacaoRepository.save(pontuacao);
@@ -120,6 +126,20 @@ public class ManagerServiceImpl implements ManagerService {
 		}
 	}
 
+	private void ensureOlympiadParticipationIsAvailable(Pontuacao pontuacao) {
+		if (!pontuacao.isAnulado() || pontuacao.getOlimpiada() == null) {
+			return;
+		}
+		olimpiadaRepository.findByIdForUpdate(pontuacao.getOlimpiada().getId())
+				.orElseThrow(() -> new InvalidArgumentException("Olimpíada não encontrada."));
+		if (pontuacaoRepository.existsOtherActiveOlympiadParticipation(pontuacao.getAnoLetivo().getId(),
+				pontuacao.getRegra().getId(), pontuacao.getOlimpiada().getId(), pontuacao.getMatriculaAluno(),
+				pontuacao.getContador(), pontuacao.getTurma().getId())) {
+			throw new InvalidArgumentException(
+					"Esta participação já está ocupada por outra pontuação ativa e não pode ser reativada.");
+		}
+	}
+
 	private TurmaDtoResponse turmaToTurmaDtoResponse(Turma turma) {
 		return TurmaDtoResponse.builder()
 				.anoLetivo(new AnoLetivoDtoResponse.Builder().id(turma.getAnoLetivo().getId())
@@ -132,6 +152,7 @@ public class ManagerServiceImpl implements ManagerService {
 				.nomeTurma(pontuacao.getTurma().getNome()).idTurma(pontuacao.getTurma().getId())
 				.descricao(pontuacao.getMotivacao()).pontos(pontuacao.getPontos())
 				.operacao(pontuacao.getRegra().getOperacao().toString()).aplicado(pontuacao.isAplicado())
-				.anulado(pontuacao.isAnulado()).build();
+				.anulado(pontuacao.isAnulado()).olimpiada(OlimpiadaDtoResponse.fromOlimpiada(pontuacao.getOlimpiada()))
+				.build();
 	}
 }
