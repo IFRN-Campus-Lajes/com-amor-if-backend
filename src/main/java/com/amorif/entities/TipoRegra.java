@@ -51,6 +51,10 @@ public class TipoRegra implements Serializable {
 	@Column(nullable = false)
 	@Builder.Default
 	private boolean porTurno = false;
+
+	@Column(nullable = true)
+	@Builder.Default
+	private Boolean temOlimpiada = false;
 	
 	@OneToMany(mappedBy = "tipoRegra", cascade = CascadeType.ALL, orphanRemoval = true)
 	@JsonIgnore
@@ -61,7 +65,7 @@ public class TipoRegra implements Serializable {
 	}
 
 	public TipoRegra(Long id, String descricao, boolean fixo, boolean temAluno, boolean automatico,
-			boolean bimestreExtra, Integer frequencia, boolean porTurno, List<Regra> regras) {
+			boolean bimestreExtra, Integer frequencia, boolean porTurno, Boolean temOlimpiada, List<Regra> regras) {
 		super();
 		this.id = id;
 		this.descricao = descricao;
@@ -71,6 +75,7 @@ public class TipoRegra implements Serializable {
 		this.bimestreExtra = bimestreExtra;
 		this.frequencia = frequencia;
 		this.porTurno = porTurno;
+		this.temOlimpiada = temOlimpiada;
 		this.regras = regras;
 	}
 	

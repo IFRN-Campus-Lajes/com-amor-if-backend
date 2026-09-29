@@ -97,6 +97,7 @@ public final class RegraCategorias {
             regra("Saúde", "2 pontos por aluno participante de olimpíada", "Atividades extracurriculares",
                     "2 pontos por aluno de cada turma que participar de olimpíadas coordenadas pelo professor no bimestre extra",
                     "2 pontos por aluno da turma que participar de olimpíadas coordenadas por docente"),
+            regra("Saúde", "2 pontos por aluno em cada olimpíada", "Atividades extracurriculares"),
             regra("Saúde", "1 ponto por aluno monitor no bimestre", "Atividades extracurriculares",
                     "1 ponto por aluno da turma em cada bimestre por atuação em monitoria",
                     "1 ponto por aluno da turma por atuação em monitoria, a cada bimestre"),

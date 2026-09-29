@@ -21,6 +21,7 @@ import com.amorif.entities.BimestreEnum;
 import com.amorif.entities.FrequenciaRegraEnum;
 import com.amorif.entities.Pontuacao;
 import com.amorif.entities.Regra;
+import com.amorif.entities.Olimpiada;
 import com.amorif.entities.User;
 import com.amorif.entities.TipoRegra;
 import com.amorif.entities.Turma;
@@ -31,6 +32,7 @@ import com.amorif.exceptions.BimonthlyRuleException;
 import com.amorif.exceptions.BimonthlyRulePerStudentException;
 import com.amorif.exceptions.ClosedSchoolYearException;
 import com.amorif.exceptions.InvalidBimesterException;
+import com.amorif.exceptions.InvalidArgumentException;
 import com.amorif.exceptions.InvalidExtraBimesterException;
 import com.amorif.exceptions.InvalidFixedValueException;
 import com.amorif.exceptions.InvalidSchoolRegistrationException;
@@ -42,6 +44,7 @@ import com.amorif.exceptions.RuleNotFoundException;
 import com.amorif.exceptions.UserHasNoPermitedRoleException;
 import com.amorif.repository.AnoLetivoRepository;
 import com.amorif.repository.PontuacaoRepository;
+import com.amorif.repository.OlimpiadaRepository;
 import com.amorif.repository.RegraRepository;
 import com.amorif.repository.TurmaRepository;
 import com.amorif.repository.UserRepository;
@@ -55,14 +58,17 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 	private RegraRepository regraRepository;
 	private AnoLetivoRepository anoLetivoRepository;
 	private UserRepository userRepository;
+	private OlimpiadaRepository olimpiadaRepository;
 
 	public PontuacaoServiceImpl(PontuacaoRepository pontuacaoRepository, TurmaRepository turmaRepository,
-			RegraRepository regraRepository, AnoLetivoRepository anoLetivoRepository, UserRepository userRepository) {
+			RegraRepository regraRepository, AnoLetivoRepository anoLetivoRepository, UserRepository userRepository,
+			OlimpiadaRepository olimpiadaRepository) {
 		this.pontuacaoRepository = pontuacaoRepository;
 		this.turmaRepository = turmaRepository;
 		this.regraRepository = regraRepository;
 		this.anoLetivoRepository = anoLetivoRepository;
 		this.userRepository = userRepository;
+		this.olimpiadaRepository = olimpiadaRepository;
 	}
 
 	@Override
@@ -210,6 +216,7 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 	}
 
 	@Override
+	@Transactional
 	public List<PontuacaoDtoResponse> throwPoints(PontuacaoDtoRequest dtoRequest) {
 		AnoLetivo anoAtual = requireOpenSchoolYear();
 		List<PontuacaoDtoResponse> pontuacoes = new ArrayList<PontuacaoDtoResponse>();
@@ -255,9 +262,11 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 
 			checkReleasedPoints(regra, dtoRequest.getPontos());
 
+			Olimpiada olimpiada = resolveOlimpiada(regra, dtoRequest.getIdOlimpiada());
+
 			if (regra.getTipoRegra().isTemAluno()) {
 				checkPointsFrequencyPerStudent(regra, anoAtual, dtoRequest.getBimestre(), dtoRequest.getIdTurma(),
-						dtoRequest.getMatriculaAluno());
+						dtoRequest.getMatriculaAluno(), olimpiada);
 			} else {
 				checkPointsFrequency(regra, anoAtual, dtoRequest.getBimestre(), dtoRequest.getIdTurma(), user);
 			}
@@ -265,6 +274,7 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 			Integer count = this.pontuacaoRepository.contadorByTurma(turma);
 			Pontuacao pontuacao = Pontuacao.builder().bimestre(dtoRequest.getBimestre()).pontos(dtoRequest.getPontos())
 					.regra(regra).anoLetivo(anoAtual).motivacao(dtoRequest.getMotivacao()).turma(turma)
+					.olimpiada(olimpiada)
 					.matriculaAluno(dtoRequest.getMatriculaAluno())
 					.contador(count != null ? this.pontuacaoRepository.contadorByTurma(turma) + 1 : 1).user(user)
 					.data(new Date()).aplicado(false).anulado(false).build();
@@ -338,6 +348,7 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 				.descricao(pontuacao.getMotivacao()).pontos(pontuacao.getPontos())
 				.operacao(pontuacao.getRegra().getOperacao()).aplicado(pontuacao.isAplicado())
 				.createdAt(pontuacao.getData()).regra(regraDto).anulado(pontuacao.isAnulado())
+				.olimpiada(com.amorif.dto.response.OlimpiadaDtoResponse.fromOlimpiada(pontuacao.getOlimpiada()))
 				.matriculaAluno(pontuacao.getMatriculaAluno()).idUser(pontuacao.getUser().getId())
 				.criadoPor(UserDtoResponse.builder().matricula(pontuacao.getUser().getMatricula())
 						.email(pontuacao.getUser().getEmail()).username(pontuacao.getUser().getNome()).build())
@@ -463,11 +474,31 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 		}
 	}
 
+	private Olimpiada resolveOlimpiada(Regra regra, Long olimpiadaId) {
+		if (!Boolean.TRUE.equals(regra.getTipoRegra().getTemOlimpiada())) {
+			return null;
+		}
+		if (olimpiadaId == null) {
+			throw new InvalidArgumentException("Informe a olimpíada da participação.");
+		}
+		return olimpiadaRepository.findByIdForUpdate(olimpiadaId)
+				.orElseThrow(() -> new InvalidArgumentException("Olimpíada não encontrada."));
+	}
+
 	private void checkPointsFrequencyPerStudent(Regra regra, AnoLetivo anoAtual, Integer bimestre, Long turmaId,
-			String matriculaAluno) {
+			String matriculaAluno, Olimpiada olimpiada) {
 
 		if (!isSchoolRegistrationValid(matriculaAluno)) {
 			throw new InvalidSchoolRegistrationException("Matrícula inválida");
+		}
+
+		if (Boolean.TRUE.equals(regra.getTipoRegra().getTemOlimpiada())) {
+			if (pontuacaoRepository.existsActiveOlympiadParticipation(anoAtual.getId(), regra.getId(),
+					olimpiada.getId(), matriculaAluno)) {
+				throw new AnnualRulePerStudentException(
+						"Já existe uma participação ativa deste aluno nesta olimpíada no ano letivo atual.");
+			}
+			return;
 		}
 
 		FrequenciaRegraEnum freq = FrequenciaRegraEnum.values()[regra.getTipoRegra().getFrequencia()];

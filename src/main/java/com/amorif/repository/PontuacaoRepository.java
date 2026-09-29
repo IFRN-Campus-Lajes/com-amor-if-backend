@@ -49,6 +49,24 @@ public interface PontuacaoRepository extends JpaRepository<Pontuacao, Integer> {
 	boolean existsByBimesterAndGroupPerStudent(@Param("bimestre") Integer bimestre, @Param("turmaId") Long turmaId,
 			@Param("matriculaAluno") String matriculaAluno, @Param("grupo") String grupo);
 
+	@Query("SELECT COUNT(p) > 0 FROM Pontuacao p WHERE p.anoLetivo.id = :anoLetivoId "
+			+ "AND p.regra.id = :regraId AND p.olimpiada.id = :olimpiadaId "
+			+ "AND p.matriculaAluno = :matriculaAluno AND p.anulado = false")
+	boolean existsActiveOlympiadParticipation(@Param("anoLetivoId") Long anoLetivoId,
+			@Param("regraId") Long regraId, @Param("olimpiadaId") Long olimpiadaId,
+			@Param("matriculaAluno") String matriculaAluno);
+
+	@Query("SELECT COUNT(p) > 0 FROM Pontuacao p WHERE p.anoLetivo.id = :anoLetivoId "
+			+ "AND p.regra.id = :regraId AND p.olimpiada.id = :olimpiadaId "
+			+ "AND p.matriculaAluno = :matriculaAluno AND p.anulado = false "
+			+ "AND NOT (p.contador = :contador AND p.turma.id = :turmaId)")
+	boolean existsOtherActiveOlympiadParticipation(@Param("anoLetivoId") Long anoLetivoId,
+			@Param("regraId") Long regraId, @Param("olimpiadaId") Long olimpiadaId,
+			@Param("matriculaAluno") String matriculaAluno, @Param("contador") Integer contador,
+			@Param("turmaId") Long turmaId);
+
+	boolean existsByOlimpiadaId(Long olimpiadaId);
+
 	@Query(value = "SELECT COALESCE(SUM(p.pontos), 0) FROM Pontuacao p " + "JOIN p.regra r " + "WHERE p.turma = :turma "
 			+ "AND r.operacao = 'SUM' " + "AND p.aplicado = true " + "AND p.anulado = false ")
 	Integer positivePoints(Turma turma);

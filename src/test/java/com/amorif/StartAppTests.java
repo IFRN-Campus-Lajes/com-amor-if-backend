@@ -20,9 +20,15 @@ class StartAppTests {
 	void contextLoadsWithCategorizedRules() {
 		assertThat(regraRepository.findAll())
 				.isNotEmpty()
-				.allSatisfy(regra -> {
-					assertThat(regra.getCategoria()).isNotBlank();
-					assertThat(regra.isAtivo()).isTrue();
+				.allSatisfy(regra -> assertThat(regra.getCategoria()).isNotBlank());
+		assertThat(regraRepository.findByAtivoTrue())
+				.anySatisfy(regra -> assertThat(regra.getDescricao())
+						.isEqualTo("2 pontos por aluno em cada olimpíada"));
+		assertThat(regraRepository.findAll())
+				.anySatisfy(regra -> {
+					assertThat(regra.getDescricao())
+							.isEqualTo("2 pontos por aluno participante de olimpíada");
+					assertThat(regra.isAtivo()).isFalse();
 				});
 	}
 }
