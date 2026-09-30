@@ -5,7 +5,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.http.HttpEntity;
@@ -53,6 +56,8 @@ public class AuthServiceImpl implements AuthService {
 			"CD2 - DG/LAJ",
 			"SUB-CHEFIA - DG/LAJ",
 			"CD4 - DIAC/LAJ");
+	private static final Pattern SUAP_FUNCTION_CODE = Pattern.compile("^(CD|FG)(\\d+)(.*)$",
+			Pattern.CASE_INSENSITIVE);
 
 	@Value("${SUAP_USER_INFO_URL}")
 	private String SUAP_USER_INFO_URL;
@@ -307,7 +312,35 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	static boolean hasAdminFunction(String[] functions) {
-		return Arrays.stream(functions).anyMatch(ADMIN_FUNCTIONS::contains);
+		return hasSuapFunction(functions, ADMIN_FUNCTIONS);
+	}
+
+	static boolean hasSuapFunction(String[] functions, List<String> expectedFunctions) {
+		if (functions == null || expectedFunctions == null) {
+			return false;
+		}
+
+		List<String> normalizedExpectedFunctions = expectedFunctions.stream()
+				.map(AuthServiceImpl::normalizeSuapFunctionCode)
+				.toList();
+		return Arrays.stream(functions)
+				.map(AuthServiceImpl::normalizeSuapFunctionCode)
+				.anyMatch(normalizedExpectedFunctions::contains);
+	}
+
+	static String normalizeSuapFunctionCode(String function) {
+		if (function == null) {
+			return "";
+		}
+
+		String normalizedFunction = function.trim();
+		Matcher matcher = SUAP_FUNCTION_CODE.matcher(normalizedFunction);
+		if (!matcher.matches()) {
+			return normalizedFunction;
+		}
+
+		String numericCode = matcher.group(2).replaceFirst("^0+(?!$)", "");
+		return matcher.group(1).toUpperCase(Locale.ROOT) + numericCode + matcher.group(3);
 	}
 
 }
