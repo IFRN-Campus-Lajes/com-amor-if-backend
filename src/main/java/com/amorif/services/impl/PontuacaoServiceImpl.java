@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -208,7 +210,7 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 			dtoRequest.setMotivacao(regraBonus.getSenso().getDescricao() + " " + regraBonus.getDescricao());
 
 			// Lançando os pontos para a turma
-			PontuacaoDtoResponse response = throwPointsForOne(dtoRequest, anoAtual);
+			PontuacaoDtoResponse response = throwPointsForOne(dtoRequest, anoAtual, null);
 			responses.add(response);
 		}
 
@@ -229,23 +231,25 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 
 			if (turno != null && turno >= 0 && turno < TurnoEnum.values().length) {
 				List<Turma> turmas = turmaRepository.findAllByTurnoAndAnoLetivo(turno, anoAtual);
+				UUID grupoLancamentoId = UUID.randomUUID();
 
 				for (Turma turma : turmas) {
 					dtoRequest.setIdTurma(turma.getId());
-					PontuacaoDtoResponse response = throwPointsForOne(dtoRequest, anoAtual);
+					PontuacaoDtoResponse response = throwPointsForOne(dtoRequest, anoAtual, grupoLancamentoId);
 					pontuacoes.add(response);
 				}
 			} else {
 				throw new InvalidTurnException("O atributo turno é nulo ou não foi passado corretamente");
 			}
 		} else {
-			pontuacoes.add(throwPointsForOne(dtoRequest, anoAtual));
+			pontuacoes.add(throwPointsForOne(dtoRequest, anoAtual, null));
 		}
 
 		return pontuacoes;
 	}
 
-	private PontuacaoDtoResponse throwPointsForOne(PontuacaoDtoRequest dtoRequest, AnoLetivo anoAtual) {
+	private PontuacaoDtoResponse throwPointsForOne(PontuacaoDtoRequest dtoRequest, AnoLetivo anoAtual,
+			UUID grupoLancamentoId) {
 		Turma turma = this.turmaRepository.getReferenceById(dtoRequest.getIdTurma());
 		Regra regra = this.regraRepository.getReferenceById(dtoRequest.getIdRegra());
 
@@ -277,7 +281,7 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 					.olimpiada(olimpiada)
 					.matriculaAluno(dtoRequest.getMatriculaAluno())
 					.contador(count != null ? this.pontuacaoRepository.contadorByTurma(turma) + 1 : 1).user(user)
-					.data(new Date()).aplicado(false).anulado(false).build();
+					.grupoLancamentoId(grupoLancamentoId).data(new Date()).aplicado(false).anulado(false).build();
 
 			return this.dtoFromPontuacao(this.pontuacaoRepository.save(pontuacao));
 		}
@@ -298,26 +302,32 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 
 		ensureSchoolYearIsOpen(pontuacao.getAnoLetivo());
 
-		// Verifica se a pontuação está anulada ou aplicada
-		if (pontuacao.isAnulado() || pontuacao.isAplicado()) {
-			throw new PointsAlreadyCancelledOrAppliedException(
-					"Não é possível deletar uma pontuação já aplicada ou anulada.");
-		}
-
 		// Obtém o usuário logado
 		UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 		User user = userRepository.findByMatricula(userDetails.getUsername()).get();
 		boolean isAdmin = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
 				.anyMatch(role -> role.getAuthority().equals("ROLE_ADMINISTRADOR"));
+		List<Pontuacao> pontuacoes = pontosDoMesmoLancamento(pontuacao);
 
-		// Verifica se o usuário logado tem permissão para deletar
-		if (!(pontuacao.getUser().getId() == user.getId()) && !isAdmin) {
-			throw new UserHasNoPermitedRoleException("Usuário não tem permissão para deletar essa pontuação.");
+		for (Pontuacao pontoDoLancamento : pontuacoes) {
+			ensureSchoolYearIsOpen(pontoDoLancamento.getAnoLetivo());
+			if (pontoDoLancamento.isAnulado() || pontoDoLancamento.isAplicado()) {
+				throw new PointsAlreadyCancelledOrAppliedException(
+						"Não é possível deletar uma pontuação já aplicada ou anulada.");
+			}
+			if (!Objects.equals(pontoDoLancamento.getUser().getId(), user.getId()) && !isAdmin) {
+				throw new UserHasNoPermitedRoleException("Usuário não tem permissão para deletar essa pontuação.");
+			}
 		}
 
-		// Deleta a pontuação
-		pontuacaoRepository.deleteByContadorAndTurma_Id(pontuacaoDtoRequest.getContador(),
-				pontuacaoDtoRequest.getIdTurma());
+		pontuacaoRepository.deleteAll(pontuacoes);
+	}
+
+	private List<Pontuacao> pontosDoMesmoLancamento(Pontuacao pontuacao) {
+		if (pontuacao.getGrupoLancamentoId() == null) {
+			return List.of(pontuacao);
+		}
+		return pontuacaoRepository.findAllByGrupoLancamentoId(pontuacao.getGrupoLancamentoId());
 	}
 
 	private AnoLetivo requireOpenSchoolYear() {
@@ -350,6 +360,7 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 				.createdAt(pontuacao.getData()).regra(regraDto).anulado(pontuacao.isAnulado())
 				.olimpiada(com.amorif.dto.response.OlimpiadaDtoResponse.fromOlimpiada(pontuacao.getOlimpiada()))
 				.matriculaAluno(pontuacao.getMatriculaAluno()).idUser(pontuacao.getUser().getId())
+				.grupoLancamentoId(pontuacao.getGrupoLancamentoId()).turno(pontuacao.getTurma().getTurno())
 				.criadoPor(UserDtoResponse.builder().matricula(pontuacao.getUser().getMatricula())
 						.email(pontuacao.getUser().getEmail()).username(pontuacao.getUser().getNome()).build())
 				.build();
