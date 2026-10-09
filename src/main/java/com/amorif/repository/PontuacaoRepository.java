@@ -17,6 +17,8 @@ import com.amorif.entities.User;
 
 public interface PontuacaoRepository extends JpaRepository<Pontuacao, Integer> {
 
+	boolean existsByRegra_Id(Long regraId);
+
 	@Query("SELECT COUNT(p) > 0 FROM Pontuacao p WHERE p.anoLetivo.id = :anoLetivoId AND p.regra.id = :regraId AND p.turma.id = :turmaId AND p.anulado = false")
 	boolean existsByYearAndRule(@Param("anoLetivoId") Long anoLetivoId, @Param("regraId") Long regraId,
 			@Param("turmaId") Long turmaId);

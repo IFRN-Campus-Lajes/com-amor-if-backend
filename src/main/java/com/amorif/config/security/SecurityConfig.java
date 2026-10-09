@@ -59,6 +59,8 @@ public class SecurityConfig {
 				.sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests((auth) -> auth
 						.requestMatchers(WHITE_LIST).permitAll()
+						.requestMatchers("/api/admin/**")
+						.hasRole(this.getRole(RoleEnum.ROLE_ADMINISTRADOR.toString()))
 						.requestMatchers("/api/pontuacao/lancarPontosAutomaticos")
 						.hasRole(this.getRole(RoleEnum.ROLE_ADMINISTRADOR.toString()))
 						.requestMatchers("/api/anoletivo/ano")
