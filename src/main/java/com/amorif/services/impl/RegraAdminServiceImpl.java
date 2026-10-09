@@ -120,10 +120,9 @@ public class RegraAdminServiceImpl implements RegraAdminService {
                 .orElseThrow(() -> new InvalidArgumentException("Senso inválido."));
         TipoRegra tipo = tipoRegraRepository.findById(request.tipoRegraId())
                 .orElseThrow(() -> new InvalidArgumentException("Tipo de regra inválido."));
+        int maximoInformado = request.valorMaximo() == null ? request.valorMinimo() : request.valorMaximo();
         int maximo = tipo.isFixo() ? request.valorMinimo()
-                : request.valorMaximo() == null ? request.valorMinimo() : request.valorMaximo();
-        if (maximo < request.valorMinimo())
-            throw new InvalidArgumentException("O valor máximo não pode ser menor que o mínimo.");
+                : Math.max(request.valorMinimo(), maximoInformado);
         String categoria = textoObrigatorio(request.categoria(), "Informe a categoria.");
         categoriaRepository.findByNomeIgnoreCase(categoria)
                 .filter(c -> c.isAtivo())
