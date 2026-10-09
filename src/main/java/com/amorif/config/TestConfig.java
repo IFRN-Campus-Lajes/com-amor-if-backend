@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 import com.amorif.entities.AnoLetivo;
+import com.amorif.entities.CategoriaRegra;
 import com.amorif.entities.FrequenciaRegraEnum;
 import com.amorif.entities.Pontuacao;
 import com.amorif.entities.Role;
@@ -22,6 +23,7 @@ import com.amorif.entities.Turma;
 import com.amorif.entities.TurnoEnum;
 import com.amorif.entities.User;
 import com.amorif.repository.AnoLetivoRepository;
+import com.amorif.repository.CategoriaRegraRepository;
 import com.amorif.repository.PontuacaoRepository;
 import com.amorif.repository.RoleRepository;
 import com.amorif.repository.SensoRepository;
@@ -46,10 +48,12 @@ public class TestConfig implements CommandLineRunner {
 	private final SensoRepository sensoRepository;
 	private final TipoRegraRepository tipoRegraRepository;
 	private final RegraRepository regraRepository;
+	private final CategoriaRegraRepository categoriaRegraRepository;
 
 	public TestConfig(AnoLetivoRepository anoLetivoRepository, TurmaRepository turmaRepository,
 			PontuacaoRepository pontuacaoRepository, RoleRepository roleRepository, UserRepository userRepository,
-			SensoRepository sensoRepository, TipoRegraRepository tipoRegraRepository, RegraRepository regraRepository) { // Adicione
+			SensoRepository sensoRepository, TipoRegraRepository tipoRegraRepository, RegraRepository regraRepository,
+			CategoriaRegraRepository categoriaRegraRepository) { // Adicione
 																															// TipoRegraRepository
 																															// no
 																															// construtor
@@ -61,6 +65,7 @@ public class TestConfig implements CommandLineRunner {
 		this.sensoRepository = sensoRepository;
 		this.tipoRegraRepository = tipoRegraRepository;
 		this.regraRepository = regraRepository;
+		this.categoriaRegraRepository = categoriaRegraRepository;
 	}
 
 	@Override
@@ -406,6 +411,16 @@ public class TestConfig implements CommandLineRunner {
 				.roles(Arrays.asList(coordenadorCurso, administrador)).build());
 
 		RegraCategorias.aplicar(regras);
+		List<CategoriaRegra> categorias = new ArrayList<>();
+		for (Regra regra : regras) {
+			boolean existente = categorias.stream()
+					.anyMatch(categoria -> categoria.getNome().equalsIgnoreCase(regra.getCategoria()));
+			if (!existente) {
+				categorias.add(CategoriaRegra.builder().nome(regra.getCategoria()).senso(regra.getSenso())
+						.ativo(true).build());
+			}
+		}
+		categoriaRegraRepository.saveAll(categorias);
 		regraRepository.saveAll(regras);
 
 //		Criar pontuação
