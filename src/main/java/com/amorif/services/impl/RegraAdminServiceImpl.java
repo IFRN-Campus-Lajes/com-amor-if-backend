@@ -104,7 +104,8 @@ public class RegraAdminServiceImpl implements RegraAdminService {
         result.put("sensos", sensoRepository.findAll());
         result.put("tipos", tipoRegraRepository.findAll());
         result.put("roles", roleRepository.findAll().stream()
-                .filter(role -> !"ROLE_ALUNO".equals(role.getName())).toList());
+                // Aval is a role grouping, not someone who can launch a rule.
+                .filter(role -> !List.of("ROLE_ALUNO", "ROLE_AVAL").contains(role.getName())).toList());
         result.put("categorias", categoriaRepository.findAllByOrderByNomeAsc());
         return result;
     }
