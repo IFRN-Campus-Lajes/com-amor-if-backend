@@ -8,6 +8,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -34,8 +36,9 @@ public class CategoriaRegra implements Serializable {
     @Column(nullable = false, unique = true, length = 100)
     private String nome;
 
-    @Column(length = 300)
-    private String descricao;
+    @ManyToOne
+    @JoinColumn(name = "senso_id")
+    private Senso senso;
 
     @Column(nullable = false)
     @Builder.Default

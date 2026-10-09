@@ -95,9 +95,13 @@ public class RegraAdminServiceImpl implements RegraAdminService {
     @Override
     @Transactional
     public Map<String, Object> metadados() {
-        regraRepository.findDistinctCategorias().forEach(nome -> {
-            if (categoriaRepository.findByNomeIgnoreCase(nome).isEmpty()) {
-                categoriaRepository.save(CategoriaRegra.builder().nome(nome).ativo(true).build());
+        regraRepository.findAll().stream().filter(regra -> regra.getCategoria() != null && regra.getSenso() != null)
+                .forEach(regra -> {
+            CategoriaRegra categoria = categoriaRepository.findByNomeIgnoreCase(regra.getCategoria())
+                    .orElseGet(() -> CategoriaRegra.builder().nome(regra.getCategoria()).ativo(true).build());
+            if (categoria.getSenso() == null) {
+                categoria.setSenso(regra.getSenso());
+                categoriaRepository.save(categoria);
             }
         });
         Map<String, Object> result = new LinkedHashMap<>();
@@ -126,7 +130,7 @@ public class RegraAdminServiceImpl implements RegraAdminService {
                 : Math.max(request.valorMinimo(), maximoInformado);
         String categoria = textoObrigatorio(request.categoria(), "Informe a categoria.");
         categoriaRepository.findByNomeIgnoreCase(categoria)
-                .filter(c -> c.isAtivo())
+                .filter(c -> c.isAtivo() && c.getSenso() != null && c.getSenso().getId().equals(senso.getId()))
                 .orElseThrow(() -> new InvalidArgumentException("Selecione uma categoria ativa cadastrada."));
         List<Role> roles = roleRepository.findAllById(request.roleIds() == null ? List.of() : request.roleIds());
         if (roles.isEmpty()) throw new InvalidArgumentException("Selecione ao menos um perfil autorizado.");

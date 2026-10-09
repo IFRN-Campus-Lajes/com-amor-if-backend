@@ -1,3 +1,3 @@
 package com.amorif.dto.request;
 
-public record CategoriaRegraDtoRequest(String nome, String descricao, Boolean ativo) {}
+public record CategoriaRegraDtoRequest(String nome, Long sensoId, Boolean ativo) {}

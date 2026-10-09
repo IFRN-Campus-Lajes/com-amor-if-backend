@@ -13,19 +13,24 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.amorif.dto.request.CategoriaRegraDtoRequest;
 import com.amorif.entities.CategoriaRegra;
+import com.amorif.entities.Senso;
 import com.amorif.exceptions.InvalidArgumentException;
 import com.amorif.repository.CategoriaRegraRepository;
 import com.amorif.repository.RegraRepository;
+import com.amorif.repository.SensoRepository;
 
 @RestController
 @RequestMapping("/api/admin/categorias-regras")
 public class CategoriaRegraController {
     private final CategoriaRegraRepository repository;
     private final RegraRepository regraRepository;
+    private final SensoRepository sensoRepository;
 
-    public CategoriaRegraController(CategoriaRegraRepository repository, RegraRepository regraRepository) {
+    public CategoriaRegraController(CategoriaRegraRepository repository, RegraRepository regraRepository,
+            SensoRepository sensoRepository) {
         this.repository = repository;
         this.regraRepository = regraRepository;
+        this.sensoRepository = sensoRepository;
     }
 
     @GetMapping
@@ -34,7 +39,8 @@ public class CategoriaRegraController {
     @PostMapping
     public CategoriaRegra criar(@RequestBody CategoriaRegraDtoRequest request) {
         String nome = validarNome(request.nome(), null);
-        return repository.save(CategoriaRegra.builder().nome(nome).descricao(limpar(request.descricao()))
+        Senso senso = validarSenso(request.sensoId());
+        return repository.save(CategoriaRegra.builder().nome(nome).senso(senso)
                 .ativo(request.ativo() == null || request.ativo()).build());
     }
 
@@ -44,10 +50,14 @@ public class CategoriaRegraController {
                 .orElseThrow(() -> new InvalidArgumentException("Categoria não encontrada."));
         String nomeAnterior = categoria.getNome();
         String nome = validarNome(request.nome(), id);
+        Senso senso = validarSenso(request.sensoId());
         if (!nomeAnterior.equalsIgnoreCase(nome) && regraRepository.existsByCategoriaIgnoreCase(nomeAnterior))
             throw new InvalidArgumentException("A categoria já é usada por regras e não pode ser renomeada.");
+        if (categoria.getSenso() != null && !categoria.getSenso().getId().equals(senso.getId())
+                && regraRepository.existsByCategoriaIgnoreCase(nomeAnterior))
+            throw new InvalidArgumentException("O senso de uma categoria usada por regras não pode ser alterado.");
         categoria.setNome(nome);
-        categoria.setDescricao(limpar(request.descricao()));
+        categoria.setSenso(senso);
         if (request.ativo() != null) categoria.setAtivo(request.ativo());
         return repository.save(categoria);
     }
@@ -68,6 +78,12 @@ public class CategoriaRegraController {
             throw new InvalidArgumentException("Já existe uma categoria com esse nome.");
         });
         return normalizado;
+    }
+
+    private Senso validarSenso(Long sensoId) {
+        if (sensoId == null) throw new InvalidArgumentException("Selecione o senso da categoria.");
+        return sensoRepository.findById(sensoId)
+                .orElseThrow(() -> new InvalidArgumentException("Senso inválido."));
     }
 
     private String limpar(String valor) { return valor == null || valor.isBlank() ? null : valor.trim(); }
