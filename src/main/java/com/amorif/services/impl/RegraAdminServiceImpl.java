@@ -97,7 +97,8 @@ public class RegraAdminServiceImpl implements RegraAdminService {
     public Map<String, Object> metadados() {
         regraRepository.findAll().stream().filter(regra -> regra.getCategoria() != null && regra.getSenso() != null)
                 .forEach(regra -> {
-            CategoriaRegra categoria = categoriaRepository.findByNomeIgnoreCase(regra.getCategoria())
+            CategoriaRegra categoria = categoriaRepository
+                    .findByNomeIgnoreCaseAndSenso_Id(regra.getCategoria(), regra.getSenso().getId())
                     .orElseGet(() -> CategoriaRegra.builder().nome(regra.getCategoria()).ativo(true).build());
             if (categoria.getSenso() == null) {
                 categoria.setSenso(regra.getSenso());
@@ -110,7 +111,7 @@ public class RegraAdminServiceImpl implements RegraAdminService {
         result.put("roles", roleRepository.findAll().stream()
                 // Aval is a role grouping, not someone who can launch a rule.
                 .filter(role -> !List.of("ROLE_ALUNO", "ROLE_AVAL").contains(role.getName())).toList());
-        result.put("categorias", categoriaRepository.findAllByOrderByNomeAsc());
+        result.put("categorias", categoriaRepository.findAllByOrderBySenso_DescricaoAscNomeAsc());
         return result;
     }
 
@@ -129,8 +130,8 @@ public class RegraAdminServiceImpl implements RegraAdminService {
         int maximo = tipo.isFixo() ? request.valorMinimo()
                 : Math.max(request.valorMinimo(), maximoInformado);
         String categoria = textoObrigatorio(request.categoria(), "Informe a categoria.");
-        categoriaRepository.findByNomeIgnoreCase(categoria)
-                .filter(c -> c.isAtivo() && c.getSenso() != null && c.getSenso().getId().equals(senso.getId()))
+        categoriaRepository.findByNomeIgnoreCaseAndSenso_Id(categoria, senso.getId())
+                .filter(CategoriaRegra::isAtivo)
                 .orElseThrow(() -> new InvalidArgumentException("Selecione uma categoria ativa cadastrada."));
         List<Role> roles = roleRepository.findAllById(request.roleIds() == null ? List.of() : request.roleIds());
         if (roles.isEmpty()) throw new InvalidArgumentException("Selecione ao menos um perfil autorizado.");

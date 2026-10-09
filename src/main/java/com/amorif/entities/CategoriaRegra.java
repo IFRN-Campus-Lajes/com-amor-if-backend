@@ -5,9 +5,8 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
@@ -21,6 +20,7 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "categoria_regra")
+@IdClass(CategoriaRegraId.class)
 @Getter
 @Setter
 @Builder
@@ -30,12 +30,10 @@ public class CategoriaRegra implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = false, length = 100)
     private String nome;
 
+    @Id
     @ManyToOne
     @JoinColumn(name = "senso_id")
     private Senso senso;

@@ -414,7 +414,8 @@ public class TestConfig implements CommandLineRunner {
 		List<CategoriaRegra> categorias = new ArrayList<>();
 		for (Regra regra : regras) {
 			boolean existente = categorias.stream()
-					.anyMatch(categoria -> categoria.getNome().equalsIgnoreCase(regra.getCategoria()));
+					.anyMatch(categoria -> categoria.getNome().equalsIgnoreCase(regra.getCategoria())
+							&& categoria.getSenso().getId().equals(regra.getSenso().getId()));
 			if (!existente) {
 				categorias.add(CategoriaRegra.builder().nome(regra.getCategoria()).senso(regra.getSenso())
 						.ativo(true).build());

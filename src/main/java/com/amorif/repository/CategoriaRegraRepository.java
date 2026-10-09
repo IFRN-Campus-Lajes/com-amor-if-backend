@@ -6,8 +6,9 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.amorif.entities.CategoriaRegra;
+import com.amorif.entities.CategoriaRegraId;
 
-public interface CategoriaRegraRepository extends JpaRepository<CategoriaRegra, Long> {
-    List<CategoriaRegra> findAllByOrderByNomeAsc();
-    Optional<CategoriaRegra> findByNomeIgnoreCase(String nome);
+public interface CategoriaRegraRepository extends JpaRepository<CategoriaRegra, CategoriaRegraId> {
+    List<CategoriaRegra> findAllByOrderBySenso_DescricaoAscNomeAsc();
+    Optional<CategoriaRegra> findByNomeIgnoreCaseAndSenso_Id(String nome, Long sensoId);
 }

@@ -34,47 +34,54 @@ public class CategoriaRegraController {
     }
 
     @GetMapping
-    public List<CategoriaRegra> listar() { return repository.findAllByOrderByNomeAsc(); }
+    public List<CategoriaRegra> listar() { return repository.findAllByOrderBySenso_DescricaoAscNomeAsc(); }
 
     @PostMapping
     public CategoriaRegra criar(@RequestBody CategoriaRegraDtoRequest request) {
-        String nome = validarNome(request.nome(), null);
         Senso senso = validarSenso(request.sensoId());
+        String nome = validarNome(request.nome(), senso.getId(), null, null);
         return repository.save(CategoriaRegra.builder().nome(nome).senso(senso)
                 .ativo(request.ativo() == null || request.ativo()).build());
     }
 
-    @PutMapping("/{id}")
-    public CategoriaRegra atualizar(@PathVariable Long id, @RequestBody CategoriaRegraDtoRequest request) {
-        CategoriaRegra categoria = repository.findById(id)
+    @PutMapping("/{sensoId}/{nomeAtual}")
+    public CategoriaRegra atualizar(@PathVariable Long sensoId, @PathVariable String nomeAtual,
+            @RequestBody CategoriaRegraDtoRequest request) {
+        CategoriaRegra categoria = repository.findByNomeIgnoreCaseAndSenso_Id(nomeAtual, sensoId)
                 .orElseThrow(() -> new InvalidArgumentException("Categoria não encontrada."));
-        String nomeAnterior = categoria.getNome();
-        String nome = validarNome(request.nome(), id);
         Senso senso = validarSenso(request.sensoId());
-        if (!nomeAnterior.equalsIgnoreCase(nome) && regraRepository.existsByCategoriaIgnoreCase(nomeAnterior))
+        String nomeAnterior = categoria.getNome();
+        String nome = validarNome(request.nome(), senso.getId(), nomeAnterior, sensoId);
+        boolean usada = regraRepository.existsByCategoriaIgnoreCaseAndSenso_Id(nomeAnterior, sensoId);
+        if (!nomeAnterior.equalsIgnoreCase(nome) && usada)
             throw new InvalidArgumentException("A categoria já é usada por regras e não pode ser renomeada.");
-        if (categoria.getSenso() != null && !categoria.getSenso().getId().equals(senso.getId())
-                && regraRepository.existsByCategoriaIgnoreCase(nomeAnterior))
+        if (!sensoId.equals(senso.getId()) && usada)
             throw new InvalidArgumentException("O senso de uma categoria usada por regras não pode ser alterado.");
-        categoria.setNome(nome);
-        categoria.setSenso(senso);
+        boolean chaveAlterada = !nomeAnterior.equals(nome) || !sensoId.equals(senso.getId());
+        if (chaveAlterada) {
+            repository.delete(categoria);
+            repository.flush();
+            categoria = CategoriaRegra.builder().nome(nome).senso(senso).ativo(categoria.isAtivo()).build();
+        }
         if (request.ativo() != null) categoria.setAtivo(request.ativo());
         return repository.save(categoria);
     }
 
-    @DeleteMapping("/{id}")
-    public void excluir(@PathVariable Long id) {
-        CategoriaRegra categoria = repository.findById(id)
+    @DeleteMapping("/{sensoId}/{nome}")
+    public void excluir(@PathVariable Long sensoId, @PathVariable String nome) {
+        CategoriaRegra categoria = repository.findByNomeIgnoreCaseAndSenso_Id(nome, sensoId)
                 .orElseThrow(() -> new InvalidArgumentException("Categoria não encontrada."));
-        if (regraRepository.existsByCategoriaIgnoreCase(categoria.getNome()))
+        if (regraRepository.existsByCategoriaIgnoreCaseAndSenso_Id(categoria.getNome(), sensoId))
             throw new InvalidArgumentException("Categorias usadas por regras não podem ser excluídas; desative-a.");
         repository.delete(categoria);
     }
 
-    private String validarNome(String nome, Long idAtual) {
+    private String validarNome(String nome, Long sensoId, String nomeAtual, Long sensoIdAtual) {
         String normalizado = limpar(nome);
         if (normalizado == null) throw new InvalidArgumentException("Informe o nome da categoria.");
-        repository.findByNomeIgnoreCase(normalizado).filter(c -> !c.getId().equals(idAtual)).ifPresent(c -> {
+        repository.findByNomeIgnoreCaseAndSenso_Id(normalizado, sensoId)
+                .filter(c -> nomeAtual == null || !c.getNome().equals(nomeAtual) || !sensoId.equals(sensoIdAtual))
+                .ifPresent(c -> {
             throw new InvalidArgumentException("Já existe uma categoria com esse nome.");
         });
         return normalizado;

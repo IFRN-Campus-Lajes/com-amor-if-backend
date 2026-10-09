@@ -18,6 +18,8 @@ public interface RegraRepository extends JpaRepository<Regra, Long> {
 
 	boolean existsByCategoriaIgnoreCase(String categoria);
 
+	boolean existsByCategoriaIgnoreCaseAndSenso_Id(String categoria, Long sensoId);
+
 	@Query("select distinct r.categoria from Regra r where r.categoria is not null and trim(r.categoria) <> ''")
 	List<String> findDistinctCategorias();
 
