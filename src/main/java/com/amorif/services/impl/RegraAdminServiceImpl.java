@@ -19,6 +19,7 @@ import com.amorif.entities.CategoriaRegra;
 import com.amorif.exceptions.InvalidArgumentException;
 import com.amorif.exceptions.RuleNotFoundException;
 import com.amorif.repository.CategoriaRegraRepository;
+import com.amorif.repository.PontuacaoRepository;
 import com.amorif.repository.RegraRepository;
 import com.amorif.repository.RoleRepository;
 import com.amorif.repository.SensoRepository;
@@ -28,15 +29,17 @@ import com.amorif.services.RegraAdminService;
 @Service
 public class RegraAdminServiceImpl implements RegraAdminService {
     private final RegraRepository regraRepository;
+    private final PontuacaoRepository pontuacaoRepository;
     private final SensoRepository sensoRepository;
     private final TipoRegraRepository tipoRegraRepository;
     private final RoleRepository roleRepository;
     private final CategoriaRegraRepository categoriaRepository;
 
-    public RegraAdminServiceImpl(RegraRepository regraRepository, SensoRepository sensoRepository,
-            TipoRegraRepository tipoRegraRepository,
+    public RegraAdminServiceImpl(RegraRepository regraRepository, PontuacaoRepository pontuacaoRepository,
+            SensoRepository sensoRepository, TipoRegraRepository tipoRegraRepository,
             RoleRepository roleRepository, CategoriaRegraRepository categoriaRepository) {
         this.regraRepository = regraRepository;
+        this.pontuacaoRepository = pontuacaoRepository;
         this.sensoRepository = sensoRepository;
         this.tipoRegraRepository = tipoRegraRepository;
         this.roleRepository = roleRepository;
@@ -65,11 +68,14 @@ public class RegraAdminServiceImpl implements RegraAdminService {
     public RegraAdminDtoResponse atualizar(Long id, RegraAdminDtoRequest request) {
         Regra atual = regraRepository.findById(id)
                 .orElseThrow(() -> new RuleNotFoundException("Regra não encontrada."));
-        atual.setAtivo(false);
-        atual.setAtualizadoPor(usuarioAtual());
-        regraRepository.save(atual);
-        Regra destino = Regra.builder().codigoVersao(codigo(atual)).versao(Math.max(1, atual.getVersao()) + 1)
-                .criadoPor(usuarioAtual()).grupo(atual.getGrupo()).build();
+        Regra destino = atual;
+        if (pontuacaoRepository.existsByRegra_Id(id)) {
+            atual.setAtivo(false);
+            atual.setAtualizadoPor(usuarioAtual());
+            regraRepository.save(atual);
+            destino = Regra.builder().codigoVersao(codigo(atual)).versao(Math.max(1, atual.getVersao()) + 1)
+                    .criadoPor(usuarioAtual()).grupo(atual.getGrupo()).build();
+        }
         preencher(destino, request);
         destino.setGrupo(atual.getGrupo());
         destino.setAtualizadoPor(usuarioAtual());
