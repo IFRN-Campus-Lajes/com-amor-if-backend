@@ -57,6 +57,7 @@ public class RegraAdminServiceImpl implements RegraAdminService {
     @Transactional
     public RegraAdminDtoResponse criar(RegraAdminDtoRequest request) {
         Regra regra = preencher(Regra.builder().codigoVersao(UUID.randomUUID().toString()).versao(1).build(), request);
+        regra.setGrupo(null);
         regra.setCriadoPor(usuarioAtual());
         regra.setAtualizadoPor(usuarioAtual());
         return RegraAdminDtoResponse.from(regraRepository.save(regra));
@@ -73,9 +74,10 @@ public class RegraAdminServiceImpl implements RegraAdminService {
             atual.setAtualizadoPor(usuarioAtual());
             regraRepository.save(atual);
             destino = Regra.builder().codigoVersao(codigo(atual)).versao(Math.max(1, atual.getVersao()) + 1)
-                    .criadoPor(usuarioAtual()).build();
+                    .criadoPor(usuarioAtual()).grupo(atual.getGrupo()).build();
         }
         preencher(destino, request);
+        destino.setGrupo(atual.getGrupo());
         destino.setAtualizadoPor(usuarioAtual());
         return RegraAdminDtoResponse.from(regraRepository.save(destino));
     }
@@ -114,25 +116,24 @@ public class RegraAdminServiceImpl implements RegraAdminService {
             throw new InvalidArgumentException("A operação deve ser SUM ou SUB.");
         if (request.valorMinimo() == null || request.valorMinimo() < 0)
             throw new InvalidArgumentException("O valor mínimo deve ser maior ou igual a zero.");
-        int maximo = request.valorMaximo() == null ? request.valorMinimo() : request.valorMaximo();
-        if (maximo < request.valorMinimo())
-            throw new InvalidArgumentException("O valor máximo não pode ser menor que o mínimo.");
         Senso senso = sensoRepository.findById(request.sensoId())
                 .orElseThrow(() -> new InvalidArgumentException("Senso inválido."));
         TipoRegra tipo = tipoRegraRepository.findById(request.tipoRegraId())
                 .orElseThrow(() -> new InvalidArgumentException("Tipo de regra inválido."));
+        int maximo = tipo.isFixo() ? request.valorMinimo()
+                : request.valorMaximo() == null ? request.valorMinimo() : request.valorMaximo();
+        if (maximo < request.valorMinimo())
+            throw new InvalidArgumentException("O valor máximo não pode ser menor que o mínimo.");
         String categoria = textoObrigatorio(request.categoria(), "Informe a categoria.");
         categoriaRepository.findByNomeIgnoreCase(categoria)
                 .filter(c -> c.isAtivo())
                 .orElseThrow(() -> new InvalidArgumentException("Selecione uma categoria ativa cadastrada."));
         List<Role> roles = roleRepository.findAllById(request.roleIds() == null ? List.of() : request.roleIds());
         if (roles.isEmpty()) throw new InvalidArgumentException("Selecione ao menos um perfil autorizado.");
-        if (tipo.isFixo() && maximo != request.valorMinimo()) maximo = request.valorMinimo();
         if (tipo.isAutomatico() && roles.stream().noneMatch(r -> "ROLE_SISTEMA".equals(r.getName())))
             throw new InvalidArgumentException("Regras automáticas precisam autorizar o perfil Sistema.");
 
         regra.setDescricao(descricao);
-        regra.setGrupo(request.grupo() == null || request.grupo().isBlank() ? null : request.grupo().trim());
         regra.setCategoria(categoria);
         regra.setOperacao(operacao);
         regra.setValorMinimo(request.valorMinimo());
