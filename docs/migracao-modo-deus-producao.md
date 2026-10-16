@@ -3,7 +3,7 @@
 ## O que muda
 
 - A tabela `regra` recebe os campos de versionamento e auditoria.
-- A tabela `categoria_regra` passa a usar a chave primária composta `(nome, senso_id)`.
+- A tabela `categoria_regra` passa a usar `id` como chave primária.
 - Categorias de mesmo nome podem existir em sensos diferentes.
 - Categorias recebem um `id` próprio; `(senso_id, nome)` permanece como unicidade de negócio.
 - `regra.categoria` continua existindo como fotografia histórica da categoria daquela versão.
@@ -45,9 +45,10 @@
    - adiciona os campos de versionamento à tabela `regra` inicialmente sem restrições;
    - preenche regras existentes com `versao = 1`, código de versão e datas;
    - aplica `NOT NULL` em `regra.versao` somente depois do preenchimento;
-   - cria `categoria_regra` com chave primária `(nome, senso_id)`;
+   - cria `categoria_regra` com chave primária `id` e unicidade em `(senso_id, nome)`;
    - importa as categorias a partir de `regra.categoria` e `regra.senso_id`;
-   - converte uma eventual tabela de homologação que ainda tenha chave numérica;
+   - associa `regra.categoria_id` ao catálogo importado;
+   - absorve uma eventual tabela de homologação anterior;
    - cria índices de apoio.
 
 5. Aguarde o backend iniciar completamente. O Hibernate executará apenas a validação do esquema; qualquer divergência interromperá a inicialização em vez de alterar silenciosamente o banco.
@@ -59,9 +60,9 @@
    ORDER BY installed_rank;
    ```
 
-   As versões `1` e `2` devem aparecer com `success = true`.
+   A versão `1` deve aparecer com `success = true`.
 
-7. Verifique a chave composta:
+7. Verifique a chave primária:
 
    ```sql
    SELECT conname, pg_get_constraintdef(oid)
@@ -70,7 +71,18 @@
      AND contype = 'p';
    ```
 
-   O resultado deve mostrar `PRIMARY KEY (nome, senso_id)`.
+   O resultado deve mostrar `PRIMARY KEY (id)`. Confirme também que nenhuma
+   regra categorizada ficou sem associação:
+
+   ```sql
+   SELECT id, descricao, categoria, senso_id
+   FROM regra
+   WHERE categoria IS NOT NULL
+     AND TRIM(categoria) <> ''
+     AND categoria_id IS NULL;
+   ```
+
+   A consulta não deve retornar registros.
 
 8. Compare regras e categorias migradas:
 
@@ -92,6 +104,14 @@
    Os totais devem ser iguais, desconsiderando categorias novas que ainda não tenham regras.
 
 9. Publique o frontend e execute o checklist funcional da Área do Mago.
+
+### Bancos de desenvolvimento que executaram uma V1 anterior
+
+Como as migrações foram consolidadas antes da primeira implantação em produção,
+uma base local que já tenha registrado a versão anterior da V1 terá checksum
+diferente. Em desenvolvimento, prefira recriar essa base. Se os dados locais
+precisarem ser preservados, faça backup e execute o `repair` do Flyway somente
+depois de conferir manualmente que o esquema já corresponde à V1 consolidada.
 
 ## Rollback
 

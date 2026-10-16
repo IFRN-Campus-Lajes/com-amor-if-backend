@@ -88,8 +88,9 @@
 
 ## Produção após a migração
 
-- [ ] As versões `1` e `2` do Flyway constam como aplicadas com sucesso.
-- [ ] A chave primária de `categoria_regra` é `(nome, senso_id)`.
+- [ ] A versão `1` consolidada do Flyway consta como aplicada com sucesso.
+- [ ] A chave primária de `categoria_regra` é `id` e existe unicidade por `(senso_id, nome)`.
+- [ ] Nenhuma regra categorizada ficou sem `categoria_id` após a migração.
 - [ ] Todas as regras existentes têm `versao >= 1` e `codigo_versao` preenchido.
 - [ ] A quantidade migrada de categorias confere com os pares distintos de categoria e senso das regras.
 - [ ] O backend inicia com `ddl-auto: validate`.
