@@ -1,5 +1,6 @@
 package com.amorif.services.impl;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -144,10 +145,14 @@ public class RegraAdminServiceImpl implements RegraAdminService {
                 .filter(item -> item.getSenso().getId().equals(senso.getId()))
                 .filter(CategoriaRegra::isAtivo)
                 .orElseThrow(() -> new InvalidArgumentException("Selecione uma categoria ativa cadastrada."));
-        List<Role> roles = roleRepository.findAllById(request.roleIds() == null ? List.of() : request.roleIds());
+        List<Role> roles = new ArrayList<>(roleRepository.findAllById(
+                request.roleIds() == null ? List.of() : request.roleIds()));
         if (roles.isEmpty()) throw new InvalidArgumentException("Selecione ao menos um perfil autorizado.");
         if (tipo.isAutomatico() && roles.stream().noneMatch(r -> "ROLE_SISTEMA".equals(r.getName())))
             throw new InvalidArgumentException("Regras automáticas precisam autorizar o perfil Sistema.");
+        Role administrador = roleRepository.getByName("ROLE_ADMINISTRADOR");
+        if (administrador != null && roles.stream().noneMatch(role -> administrador.getName().equals(role.getName())))
+            roles.add(administrador);
 
         regra.setDescricao(descricao);
         regra.setCategoriaRegra(categoria);

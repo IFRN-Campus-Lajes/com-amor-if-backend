@@ -36,6 +36,13 @@ public class RegraServiceImpl implements RegraService{
             List<String> userRolesNames = user.getAuthorities().stream()
                     .map(authority -> authority.getAuthority())
                     .collect(Collectors.toList());
+            if (userRolesNames.contains("ROLE_ADMINISTRADOR")) {
+                return regraRepository.findByAtivoTrue().stream()
+                        .filter(regra -> regra.getRoles().stream()
+                                .noneMatch(role -> "ROLE_SISTEMA".equals(role.getName())))
+                        .sorted((a, b) -> a.getDescricao().compareToIgnoreCase(b.getDescricao()))
+                        .toList();
+            }
             List<Role> userRoles = roleRepository.findByNameIn(userRolesNames);
 
             // Filtra as regras, excluindo aquelas que possuem a ROLE_SISTEMA
