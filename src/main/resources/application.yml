@@ -5,6 +5,9 @@ security:
       expire-lenght: 3600000
 
 spring:
+  flyway:
+    enabled: false
+
   config:
     import: optional:file:.env[.properties]
 

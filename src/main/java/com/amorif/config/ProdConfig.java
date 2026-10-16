@@ -41,7 +41,13 @@ public class ProdConfig implements CommandLineRunner {
 	}
 
 	@Override
-	public void run(String... args) throws Exception {
+	public void run(String... args) {
+		// O catálogo de regras é administrado exclusivamente pela Área do Mago.
+		// A carga abaixo permanece no repositório apenas como registro histórico.
+	}
+
+	@SuppressWarnings("unused")
+	private void carregarCatalogoHistorico() {
 //		// Create Roles
 		List<String> rolesExistentes = roleRepository.findAll().stream().map(Role::getName)
 				.collect(Collectors.toList());
