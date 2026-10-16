@@ -362,6 +362,7 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 		// Verifique os papéis do usuário
 		List<String> userRoles = userDetails.getAuthorities().stream().map(authority -> authority.getAuthority())
 				.collect(Collectors.toList());
+		if (userRoles.contains("ROLE_ADMINISTRADOR")) return true;
 
 		// Verifique se algum dos papéis do usuário está permitido na regra
 		boolean hasPermission = regra.getRoles().stream().anyMatch(role -> userRoles.contains(role.getName()));
