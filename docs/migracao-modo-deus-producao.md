@@ -1,4 +1,4 @@
-# Migração do Modo Deus em produção
+# Migração da Área do Mago em produção
 
 ## O que muda
 
@@ -90,7 +90,7 @@
 
    Os totais devem ser iguais, desconsiderando categorias novas que ainda não tenham regras.
 
-9. Publique o frontend e execute o checklist funcional do Modo Deus.
+9. Publique o frontend e execute o checklist funcional da Área do Mago.
 
 ## Rollback
 

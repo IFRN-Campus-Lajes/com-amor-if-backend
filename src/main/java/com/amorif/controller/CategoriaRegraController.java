@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.amorif.dto.request.CategoriaRegraDtoRequest;
 import com.amorif.entities.CategoriaRegra;
@@ -45,6 +46,7 @@ public class CategoriaRegraController {
     }
 
     @PutMapping("/{sensoId}/{nomeAtual}")
+    @Transactional
     public CategoriaRegra atualizar(@PathVariable Long sensoId, @PathVariable String nomeAtual,
             @RequestBody CategoriaRegraDtoRequest request) {
         CategoriaRegra categoria = repository.findByNomeIgnoreCaseAndSenso_Id(nomeAtual, sensoId)
@@ -53,12 +55,18 @@ public class CategoriaRegraController {
         String nomeAnterior = categoria.getNome();
         String nome = validarNome(request.nome(), senso.getId(), nomeAnterior, sensoId);
         boolean usada = regraRepository.existsByCategoriaIgnoreCaseAndSenso_Id(nomeAnterior, sensoId);
-        if (!nomeAnterior.equalsIgnoreCase(nome) && usada)
-            throw new InvalidArgumentException("A categoria já é usada por regras e não pode ser renomeada.");
         if (!sensoId.equals(senso.getId()) && usada)
             throw new InvalidArgumentException("O senso de uma categoria usada por regras não pode ser alterado.");
+        if (Boolean.FALSE.equals(request.ativo())
+                && regraRepository.existsByCategoriaIgnoreCaseAndSenso_IdAndAtivoTrue(nomeAnterior, sensoId))
+            throw new InvalidArgumentException("Desative as regras ativas da categoria antes de inativá-la.");
         boolean chaveAlterada = !nomeAnterior.equals(nome) || !sensoId.equals(senso.getId());
         if (chaveAlterada) {
+            if (!nomeAnterior.equals(nome)) {
+                regraRepository.findByCategoriaIgnoreCaseAndSenso_Id(nomeAnterior, sensoId)
+                        .forEach(regra -> regra.setCategoria(nome));
+                regraRepository.flush();
+            }
             repository.delete(categoria);
             repository.flush();
             categoria = CategoriaRegra.builder().nome(nome).senso(senso).ativo(categoria.isAtivo()).build();

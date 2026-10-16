@@ -50,6 +50,7 @@ public class RegraAdminServiceImpl implements RegraAdminService {
     @Transactional(readOnly = true)
     public List<RegraAdminDtoResponse> listar() {
         return regraRepository.findAllByOrderBySenso_DescricaoAscCategoriaAscDescricaoAsc().stream()
+                .sorted((a, b) -> Boolean.compare(b.isAtivo(), a.isAtivo()))
                 .map(RegraAdminDtoResponse::from).toList();
     }
 
@@ -68,6 +69,7 @@ public class RegraAdminServiceImpl implements RegraAdminService {
     public RegraAdminDtoResponse atualizar(Long id, RegraAdminDtoRequest request) {
         Regra atual = regraRepository.findById(id)
                 .orElseThrow(() -> new RuleNotFoundException("Regra não encontrada."));
+        validarVersaoAtual(atual);
         Regra destino = atual;
         if (pontuacaoRepository.existsByRegra_Id(id)) {
             atual.setAtivo(false);
@@ -87,6 +89,7 @@ public class RegraAdminServiceImpl implements RegraAdminService {
     public RegraAdminDtoResponse alterarStatus(Long id, boolean ativo) {
         Regra regra = regraRepository.findById(id)
                 .orElseThrow(() -> new RuleNotFoundException("Regra não encontrada."));
+        validarVersaoAtual(regra);
         regra.setAtivo(ativo);
         regra.setAtualizadoPor(usuarioAtual());
         return RegraAdminDtoResponse.from(regraRepository.save(regra));
@@ -162,5 +165,11 @@ public class RegraAdminServiceImpl implements RegraAdminService {
     private String codigo(Regra regra) {
         return regra.getCodigoVersao() == null || regra.getCodigoVersao().isBlank()
                 ? UUID.randomUUID().toString() : regra.getCodigoVersao();
+    }
+
+    private void validarVersaoAtual(Regra regra) {
+        Regra atual = regraRepository.findTopByCodigoVersaoOrderByVersaoDesc(regra.getCodigoVersao());
+        if (atual != null && !atual.getId().equals(regra.getId()))
+            throw new InvalidArgumentException("Versões anteriores são somente para consulta histórica.");
     }
 }

@@ -1,4 +1,4 @@
-# API do Modo Deus
+# API da Área do Mago
 
 Todos os endpoints abaixo exigem `ROLE_ADMINISTRADOR`.
 
@@ -34,7 +34,7 @@ O corpo de criação e edição contém:
 - `PUT /api/admin/categorias-regras/{id}`
 - `DELETE /api/admin/categorias-regras/{id}`
 
-Categorias usadas por regras não podem ser excluídas ou renomeadas; elas podem ser desativadas. Na primeira consulta dos metadados, nomes legados existentes nas próprias regras são registrados no catálogo de categorias.
+Categorias usadas por regras não podem ser excluídas. Elas podem ser renomeadas, atualizando atomicamente as regras do mesmo senso, mas só podem ser inativadas quando não houver regras ativas associadas. Na primeira consulta dos metadados, nomes legados existentes nas próprias regras são registrados no catálogo de categorias.
 
 ## Fonte de verdade
 

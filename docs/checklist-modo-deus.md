@@ -1,10 +1,10 @@
-# Checklist de validação do Modo Deus
+# Checklist de validação da Área do Mago
 
 ## Preparação
 
 - [ ] Backend iniciado com JDK 21 e perfil de desenvolvimento.
 - [ ] Frontend iniciado na branch `codex/modo-deus`.
-- [ ] Usuário administrador consegue abrir o Modo Deus.
+- [ ] Usuário administrador consegue abrir a Área do Mago.
 - [ ] Usuário sem perfil administrador recebe bloqueio de acesso.
 - [ ] Não há erros no console do navegador nem no log do backend ao abrir a página.
 
@@ -28,7 +28,9 @@
 - [ ] Editar e excluir têm botões de mesmo tamanho.
 - [ ] Uma categoria sem regras pode ser renomeada, movida ou excluída.
 - [ ] Uma categoria usada por regras não pode ser renomeada, movida nem excluída.
-- [ ] Uma categoria usada pode ser desativada.
+- [ ] Uma categoria usada pode ser renomeada e todas as suas regras passam a exibir o novo nome.
+- [ ] Uma categoria com regras ativas não pode ser inativada.
+- [ ] Após desativar todas as regras da categoria, ela pode ser inativada.
 - [ ] Categorias inativas não aparecem para novas regras, mas continuam visíveis nas regras existentes.
 
 ## Cadastro e edição de regras
@@ -50,6 +52,8 @@
 - [ ] Editar regra com lançamentos desativa a versão anterior e cria v2 ativa.
 - [ ] Uma nova edição da versão utilizada cria v3.
 - [ ] Pontuações antigas continuam apontando para a versão antiga da regra.
+- [ ] Versões anteriores aparecem somente no acordeão de histórico, sem ações de edição ou ativação.
+- [ ] A API rejeita tentativas diretas de editar ou ativar uma versão anterior.
 - [ ] A pontuação histórica não muda após editar descrição, valores, senso, categoria, tipo ou perfis.
 - [ ] A mensagem de sucesso informa a nova versão somente quando ela foi realmente criada.
 
@@ -77,6 +81,7 @@
 - [ ] O menu de opções aparece acima do ranking na Home.
 - [ ] Lançamento de pontuações continua agrupando regras por senso e categoria.
 - [ ] Regras desativadas não ficam disponíveis para novos lançamentos.
+- [ ] Uma regra nova e ativa aparece no lançamento para usuários com um dos perfis autorizados selecionados.
 - [ ] Ranking, relatórios, validação e histórico continuam exibindo pontuações antigas.
 
 ## Produção após a migração

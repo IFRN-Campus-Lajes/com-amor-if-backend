@@ -40,8 +40,10 @@ public class RegraServiceImpl implements RegraService{
 
             // Filtra as regras, excluindo aquelas que possuem a ROLE_SISTEMA
             return regraRepository.findByRolesInAndAtivoTrue(userRoles).stream()
+                    .distinct()
                     .filter(regra -> regra.getRoles().stream()
                             .noneMatch(role -> "ROLE_SISTEMA".equals(role.getName())))
+                    .sorted((a, b) -> a.getDescricao().compareToIgnoreCase(b.getDescricao()))
                     .collect(Collectors.toList());
         } else {
             throw new IllegalStateException("Usuário não autenticado ou tipo inesperado de principal");
