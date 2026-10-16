@@ -17,6 +17,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -41,6 +42,11 @@ private static final long serialVersionUID = 1L;
 
 	@Column(nullable = true)
 	private String categoria;
+
+	@JsonIgnore
+	@ManyToOne
+	@JoinColumn(name = "categoria_id")
+	private CategoriaRegra categoriaRegra;
 
 	@Column(nullable = false)
 	@Builder.Default
@@ -104,7 +110,7 @@ private static final long serialVersionUID = 1L;
 		atualizadoEm = LocalDateTime.now();
 	}
 
-	public Regra(Long id, String descricao, String grupo, String categoria, boolean ativo, String operacao, int valorMinimo, int valorMaximo, Senso senso,
+	public Regra(Long id, String descricao, String grupo, String categoria, CategoriaRegra categoriaRegra, boolean ativo, String operacao, int valorMinimo, int valorMaximo, Senso senso,
 			TipoRegra tipoRegra, List<Role> roles, String codigoVersao, int versao, String criadoPor,
 			String atualizadoPor, LocalDateTime criadoEm, LocalDateTime atualizadoEm) {
 		super();
@@ -112,6 +118,7 @@ private static final long serialVersionUID = 1L;
 		this.descricao = descricao;
 		this.grupo = grupo;
 		this.categoria = categoria;
+		this.categoriaRegra = categoriaRegra;
 		this.ativo = ativo;
 		this.operacao = operacao;
 		this.valorMinimo = valorMinimo;

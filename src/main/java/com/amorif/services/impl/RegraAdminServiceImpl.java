@@ -105,7 +105,11 @@ public class RegraAdminServiceImpl implements RegraAdminService {
                     .orElseGet(() -> CategoriaRegra.builder().nome(regra.getCategoria()).ativo(true).build());
             if (categoria.getSenso() == null) {
                 categoria.setSenso(regra.getSenso());
-                categoriaRepository.save(categoria);
+                categoria = categoriaRepository.save(categoria);
+            }
+            if (regra.getCategoriaRegra() == null) {
+                regra.setCategoriaRegra(categoria);
+                regraRepository.save(regra);
             }
         });
         Map<String, Object> result = new LinkedHashMap<>();
@@ -132,8 +136,12 @@ public class RegraAdminServiceImpl implements RegraAdminService {
         int maximoInformado = request.valorMaximo() == null ? request.valorMinimo() : request.valorMaximo();
         int maximo = tipo.isFixo() ? request.valorMinimo()
                 : Math.max(request.valorMinimo(), maximoInformado);
-        String categoria = textoObrigatorio(request.categoria(), "Informe a categoria.");
-        categoriaRepository.findByNomeIgnoreCaseAndSenso_Id(categoria, senso.getId())
+        CategoriaRegra categoria = request.categoriaId() == null
+                ? categoriaRepository.findByNomeIgnoreCaseAndSenso_Id(
+                        textoObrigatorio(request.categoria(), "Informe a categoria."), senso.getId()).orElse(null)
+                : categoriaRepository.findById(request.categoriaId()).orElse(null);
+        categoria = java.util.Optional.ofNullable(categoria)
+                .filter(item -> item.getSenso().getId().equals(senso.getId()))
                 .filter(CategoriaRegra::isAtivo)
                 .orElseThrow(() -> new InvalidArgumentException("Selecione uma categoria ativa cadastrada."));
         List<Role> roles = roleRepository.findAllById(request.roleIds() == null ? List.of() : request.roleIds());
@@ -142,7 +150,8 @@ public class RegraAdminServiceImpl implements RegraAdminService {
             throw new InvalidArgumentException("Regras automáticas precisam autorizar o perfil Sistema.");
 
         regra.setDescricao(descricao);
-        regra.setCategoria(categoria);
+        regra.setCategoriaRegra(categoria);
+        regra.setCategoria(categoria.getNome());
         regra.setOperacao(operacao);
         regra.setValorMinimo(request.valorMinimo());
         regra.setValorMaximo(maximo);

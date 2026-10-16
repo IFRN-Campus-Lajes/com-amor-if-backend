@@ -45,12 +45,13 @@ public class CategoriaRegraController {
                 .ativo(request.ativo() == null || request.ativo()).build());
     }
 
-    @PutMapping("/{sensoId}/{nomeAtual}")
+    @PutMapping("/{id}")
     @Transactional
-    public CategoriaRegra atualizar(@PathVariable Long sensoId, @PathVariable String nomeAtual,
+    public CategoriaRegra atualizar(@PathVariable Long id,
             @RequestBody CategoriaRegraDtoRequest request) {
-        CategoriaRegra categoria = repository.findByNomeIgnoreCaseAndSenso_Id(nomeAtual, sensoId)
+        CategoriaRegra categoria = repository.findById(id)
                 .orElseThrow(() -> new InvalidArgumentException("Categoria não encontrada."));
+        Long sensoId = categoria.getSenso().getId();
         Senso senso = validarSenso(request.sensoId());
         String nomeAnterior = categoria.getNome();
         String nome = validarNome(request.nome(), senso.getId(), nomeAnterior, sensoId);
@@ -60,25 +61,22 @@ public class CategoriaRegraController {
         if (Boolean.FALSE.equals(request.ativo())
                 && regraRepository.existsByCategoriaIgnoreCaseAndSenso_IdAndAtivoTrue(nomeAnterior, sensoId))
             throw new InvalidArgumentException("Desative as regras ativas da categoria antes de inativá-la.");
-        boolean chaveAlterada = !nomeAnterior.equals(nome) || !sensoId.equals(senso.getId());
-        if (chaveAlterada) {
-            if (!nomeAnterior.equals(nome)) {
-                regraRepository.findByCategoriaIgnoreCaseAndSenso_Id(nomeAnterior, sensoId)
-                        .forEach(regra -> regra.setCategoria(nome));
-                regraRepository.flush();
-            }
-            repository.delete(categoria);
-            repository.flush();
-            categoria = CategoriaRegra.builder().nome(nome).senso(senso).ativo(categoria.isAtivo()).build();
+        if (!nomeAnterior.equals(nome)) {
+            regraRepository.findByCategoriaIgnoreCaseAndSenso_Id(nomeAnterior, sensoId)
+                    .forEach(regra -> regra.setCategoria(nome));
+            regraRepository.flush();
         }
+        categoria.setNome(nome);
+        categoria.setSenso(senso);
         if (request.ativo() != null) categoria.setAtivo(request.ativo());
         return repository.save(categoria);
     }
 
-    @DeleteMapping("/{sensoId}/{nome}")
-    public void excluir(@PathVariable Long sensoId, @PathVariable String nome) {
-        CategoriaRegra categoria = repository.findByNomeIgnoreCaseAndSenso_Id(nome, sensoId)
+    @DeleteMapping("/{id}")
+    public void excluir(@PathVariable Long id) {
+        CategoriaRegra categoria = repository.findById(id)
                 .orElseThrow(() -> new InvalidArgumentException("Categoria não encontrada."));
+        Long sensoId = categoria.getSenso().getId();
         if (regraRepository.existsByCategoriaIgnoreCaseAndSenso_Id(categoria.getNome(), sensoId))
             throw new InvalidArgumentException("Categorias usadas por regras não podem ser excluídas; desative-a.");
         repository.delete(categoria);

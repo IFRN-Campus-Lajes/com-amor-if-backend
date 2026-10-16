@@ -6,7 +6,7 @@ import java.util.List;
 import com.amorif.entities.Regra;
 
 public record RegraAdminDtoResponse(
-        Long id, String codigoVersao, int versao, String descricao, String grupo, String categoria,
+        Long id, String codigoVersao, int versao, String descricao, String grupo, Long categoriaId, String categoria,
         boolean ativo, String operacao, int valorMinimo, int valorMaximo,
         Long sensoId, String senso, Long tipoRegraId, String tipoRegra,
         boolean fixo, boolean temAluno, boolean automatico, boolean bimestreExtra,
@@ -17,7 +17,9 @@ public record RegraAdminDtoResponse(
     public static RegraAdminDtoResponse from(Regra regra) {
         return new RegraAdminDtoResponse(
                 regra.getId(), regra.getCodigoVersao(), regra.getVersao(), regra.getDescricao(), regra.getGrupo(),
-                regra.getCategoria(), regra.isAtivo(), regra.getOperacao(), regra.getValorMinimo(), regra.getValorMaximo(),
+                regra.getCategoriaRegra() == null ? null : regra.getCategoriaRegra().getId(),
+                regra.getCategoriaRegra() == null ? regra.getCategoria() : regra.getCategoriaRegra().getNome(),
+                regra.isAtivo(), regra.getOperacao(), regra.getValorMinimo(), regra.getValorMaximo(),
                 regra.getSenso().getId(), regra.getSenso().getDescricao(), regra.getTipoRegra().getId(),
                 regra.getTipoRegra().getDescricao(), regra.getTipoRegra().isFixo(), regra.getTipoRegra().isTemAluno(),
                 regra.getTipoRegra().isAutomatico(), regra.getTipoRegra().isBimestreExtra(),

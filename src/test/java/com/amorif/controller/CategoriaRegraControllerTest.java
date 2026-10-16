@@ -74,19 +74,20 @@ class CategoriaRegraControllerTest {
     @Test
     void deveRenomearCategoriaERegrasAssociadas() {
         Senso limpeza = Senso.builder().id(1L).descricao("Limpeza").build();
-        CategoriaRegra existente = CategoriaRegra.builder().nome("Antiga").senso(limpeza).ativo(true).build();
+        CategoriaRegra existente = CategoriaRegra.builder().id(10L).nome("Antiga").senso(limpeza).ativo(true).build();
         Regra regra = Regra.builder().categoria("Antiga").senso(limpeza).build();
-        when(categoriaRepository.findByNomeIgnoreCaseAndSenso_Id("Antiga", 1L)).thenReturn(Optional.of(existente));
+        when(categoriaRepository.findById(10L)).thenReturn(Optional.of(existente));
         when(categoriaRepository.findByNomeIgnoreCaseAndSenso_Id("Nova", 1L)).thenReturn(Optional.empty());
         when(sensoRepository.findById(1L)).thenReturn(Optional.of(limpeza));
         when(regraRepository.existsByCategoriaIgnoreCaseAndSenso_Id("Antiga", 1L)).thenReturn(true);
         when(regraRepository.findByCategoriaIgnoreCaseAndSenso_Id("Antiga", 1L)).thenReturn(List.of(regra));
         when(categoriaRepository.save(any(CategoriaRegra.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        CategoriaRegra atualizada = controller.atualizar(1L, "Antiga",
+        CategoriaRegra atualizada = controller.atualizar(10L,
                 new CategoriaRegraDtoRequest("Nova", 1L, true));
 
         assertEquals("Nova", atualizada.getNome());
+        assertEquals(10L, atualizada.getId());
         assertEquals("Nova", regra.getCategoria());
         verify(regraRepository).flush();
     }
@@ -94,14 +95,14 @@ class CategoriaRegraControllerTest {
     @Test
     void deveRecusarInativacaoComRegrasAtivas() {
         Senso limpeza = Senso.builder().id(1L).descricao("Limpeza").build();
-        CategoriaRegra existente = CategoriaRegra.builder().nome("Geral").senso(limpeza).ativo(true).build();
-        when(categoriaRepository.findByNomeIgnoreCaseAndSenso_Id("Geral", 1L)).thenReturn(Optional.of(existente));
+        CategoriaRegra existente = CategoriaRegra.builder().id(10L).nome("Geral").senso(limpeza).ativo(true).build();
+        when(categoriaRepository.findById(10L)).thenReturn(Optional.of(existente));
         when(sensoRepository.findById(1L)).thenReturn(Optional.of(limpeza));
         when(regraRepository.existsByCategoriaIgnoreCaseAndSenso_Id("Geral", 1L)).thenReturn(true);
         when(regraRepository.existsByCategoriaIgnoreCaseAndSenso_IdAndAtivoTrue("Geral", 1L)).thenReturn(true);
 
         InvalidArgumentException erro = assertThrows(InvalidArgumentException.class,
-                () -> controller.atualizar(1L, "Geral", new CategoriaRegraDtoRequest("Geral", 1L, false)));
+                () -> controller.atualizar(10L, new CategoriaRegraDtoRequest("Geral", 1L, false)));
 
         assertEquals("Desative as regras ativas da categoria antes de inativá-la.", erro.getMessage());
     }

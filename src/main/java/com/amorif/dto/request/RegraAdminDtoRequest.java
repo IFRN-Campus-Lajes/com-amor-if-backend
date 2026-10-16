@@ -5,6 +5,7 @@ import java.util.List;
 public record RegraAdminDtoRequest(
         String descricao,
         String grupo,
+        Long categoriaId,
         String categoria,
         String operacao,
         Integer valorMinimo,

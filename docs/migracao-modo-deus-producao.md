@@ -5,6 +5,7 @@
 - A tabela `regra` recebe os campos de versionamento e auditoria.
 - A tabela `categoria_regra` passa a usar a chave primária composta `(nome, senso_id)`.
 - Categorias de mesmo nome podem existir em sensos diferentes.
+- Categorias recebem um `id` próprio; `(senso_id, nome)` permanece como unicidade de negócio.
 - `regra.categoria` continua existindo como fotografia histórica da categoria daquela versão.
 - O Flyway executa a migração antes de o Hibernate validar o esquema.
 - Em produção, o Hibernate deixa de alterar o banco automaticamente (`ddl-auto: validate`).
@@ -58,7 +59,7 @@
    ORDER BY installed_rank;
    ```
 
-   A versão `1` deve aparecer com `success = true`.
+   As versões `1` e `2` devem aparecer com `success = true`.
 
 7. Verifique a chave composta:
 

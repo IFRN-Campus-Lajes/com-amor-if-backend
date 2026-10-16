@@ -34,7 +34,9 @@ O corpo de criação e edição contém:
 - `PUT /api/admin/categorias-regras/{id}`
 - `DELETE /api/admin/categorias-regras/{id}`
 
-Categorias usadas por regras não podem ser excluídas. Elas podem ser renomeadas, atualizando atomicamente as regras do mesmo senso, mas só podem ser inativadas quando não houver regras ativas associadas. Na primeira consulta dos metadados, nomes legados existentes nas próprias regras são registrados no catálogo de categorias.
+Cada categoria possui um `id` estável como chave primária. O par `(senso, nome)` permanece único, mas o nome não participa mais da identidade e pode ser alterado sem recriar a categoria. Regras administrativas enviam `categoriaId`; o campo textual legado continua disponível para compatibilidade e histórico.
+
+Categorias usadas por regras não podem ser excluídas. Elas podem ser renomeadas, atualizando atomicamente o texto compatível das regras do mesmo senso, mas só podem ser inativadas quando não houver regras ativas associadas. Na primeira consulta dos metadados, nomes legados existentes nas próprias regras são registrados no catálogo de categorias.
 
 ## Fonte de verdade
 

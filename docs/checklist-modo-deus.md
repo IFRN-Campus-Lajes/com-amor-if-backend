@@ -5,6 +5,7 @@
 - [ ] Backend iniciado com JDK 21 e perfil de desenvolvimento.
 - [ ] Frontend iniciado na branch `codex/modo-deus`.
 - [ ] Usuário administrador consegue abrir a Área do Mago.
+- [ ] A Área do Mago abre pela rota `/wizard-area` e os menus não apontam mais para `/god-mode`.
 - [ ] Usuário sem perfil administrador recebe bloqueio de acesso.
 - [ ] Não há erros no console do navegador nem no log do backend ao abrir a página.
 
@@ -29,6 +30,7 @@
 - [ ] Uma categoria sem regras pode ser renomeada, movida ou excluída.
 - [ ] Uma categoria usada por regras não pode ser renomeada, movida nem excluída.
 - [ ] Uma categoria usada pode ser renomeada e todas as suas regras passam a exibir o novo nome.
+- [ ] O `id` da categoria permanece igual depois da renomeação.
 - [ ] Uma categoria com regras ativas não pode ser inativada.
 - [ ] Após desativar todas as regras da categoria, ela pode ser inativada.
 - [ ] Categorias inativas não aparecem para novas regras, mas continuam visíveis nas regras existentes.
@@ -86,7 +88,7 @@
 
 ## Produção após a migração
 
-- [ ] A versão `1` do Flyway consta como aplicada com sucesso.
+- [ ] As versões `1` e `2` do Flyway constam como aplicadas com sucesso.
 - [ ] A chave primária de `categoria_regra` é `(nome, senso_id)`.
 - [ ] Todas as regras existentes têm `versao >= 1` e `codigo_versao` preenchido.
 - [ ] A quantidade migrada de categorias confere com os pares distintos de categoria e senso das regras.
