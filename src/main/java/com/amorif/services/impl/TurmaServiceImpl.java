@@ -10,7 +10,9 @@ import com.amorif.dto.response.AnoLetivoDtoResponse;
 import com.amorif.dto.response.TurmaDtoResponse;
 import com.amorif.entities.AnoLetivo;
 import com.amorif.entities.Turma;
+import com.amorif.entities.TurnoEnum;
 import com.amorif.exceptions.InvalidArgumentException;
+import com.amorif.exceptions.InvalidTurnException;
 import com.amorif.repository.AnoLetivoRepository;
 import com.amorif.repository.TurmaRepository;
 import com.amorif.services.TurmaService;
@@ -58,6 +60,7 @@ public class TurmaServiceImpl implements TurmaService {
 
 	@Override
 	public TurmaDtoResponse postTurma(TurmaDtoRequest turmaRequest) {
+		Integer turno = requireValidTurn(turmaRequest.getTurno());
 		if (turmaRequest.getId() != null) {
 
 			Turma turma = this.turmaRepository.getReferenceById(turmaRequest.getId());
@@ -65,6 +68,7 @@ public class TurmaServiceImpl implements TurmaService {
 
 				turma.setNome(turmaRequest.getNome());
 				turma.setDescricao(turmaRequest.getDescricao());
+				turma.setTurno(turno);
 
 				AnoLetivo ano = anoLetivoRepository.getReferenceById(turmaRequest.getIdAnoLetivo());
 				if (ano != null) {
@@ -87,12 +91,19 @@ public class TurmaServiceImpl implements TurmaService {
 		return TurmaDtoResponse.builder().id(turma.getId())
 				.anoLetivo(new AnoLetivoDtoResponse.Builder().id(turma.getAnoLetivo().getId())
 						.anoLetivo(turma.getAnoLetivo().getAno()).build())
-				.nome(turma.getNome()).descricao(turma.getDescricao()).pontuacao(0).build();
+				.nome(turma.getNome()).descricao(turma.getDescricao()).turno(turma.getTurno()).pontuacao(0).build();
 	}
 
 	private Turma turmaFromDto(TurmaDtoRequest dto) {
-		return Turma.builder().nome(dto.getNome()).descricao(dto.getDescricao())
+		return Turma.builder().nome(dto.getNome()).descricao(dto.getDescricao()).turno(dto.getTurno())
 				.anoLetivo(this.anoLetivoRepository.getReferenceById(dto.getIdAnoLetivo())).build();
+	}
+
+	private Integer requireValidTurn(Integer turno) {
+		if (turno == null || turno < 0 || turno >= TurnoEnum.values().length) {
+			throw new InvalidTurnException("Selecione um turno válido para a turma.");
+		}
+		return turno;
 	}
 
 }
