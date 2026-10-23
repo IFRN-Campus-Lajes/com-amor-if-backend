@@ -23,6 +23,9 @@ public class TurmaDtoRequest implements Serializable {
 	@JsonProperty("descricao")
 	private String descricao;
 
+	@JsonProperty("turno")
+	private Integer turno;
+
 	public TurmaDtoRequest() {
 
 	}
@@ -59,9 +62,17 @@ public class TurmaDtoRequest implements Serializable {
 		this.descricao = descricao;
 	}
 
+	public Integer getTurno() {
+		return turno;
+	}
+
+	public void setTurno(Integer turno) {
+		this.turno = turno;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(descricao, id, idAnoLetivo, nome);
+		return Objects.hash(descricao, id, idAnoLetivo, nome, turno);
 	}
 
 	@Override
@@ -74,6 +85,7 @@ public class TurmaDtoRequest implements Serializable {
 			return false;
 		TurmaDtoRequest other = (TurmaDtoRequest) obj;
 		return Objects.equals(descricao, other.descricao) && Objects.equals(id, other.id)
-				&& Objects.equals(idAnoLetivo, other.idAnoLetivo) && Objects.equals(nome, other.nome);
+				&& Objects.equals(idAnoLetivo, other.idAnoLetivo) && Objects.equals(nome, other.nome)
+				&& Objects.equals(turno, other.turno);
 	}
 }

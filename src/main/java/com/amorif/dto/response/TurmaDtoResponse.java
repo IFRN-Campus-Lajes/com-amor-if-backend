@@ -14,6 +14,7 @@ public class TurmaDtoResponse implements Serializable {
 	private AnoLetivoDtoResponse anoLetivo;
 	private String nome;
 	private String descricao;
+	private Integer turno;
 	private Integer pontuacao;
 
 	public TurmaDtoResponse() {
@@ -25,6 +26,7 @@ public class TurmaDtoResponse implements Serializable {
 		this.anoLetivo = builder.anoLetivo;
 		this.nome = builder.nome;
 		this.descricao = builder.descricao;
+		this.turno = builder.turno;
 		this.pontuacao = builder.pontuacao;
 	}
 	
@@ -60,6 +62,14 @@ public class TurmaDtoResponse implements Serializable {
 		this.descricao = descricao;
 	}
 
+	public Integer getTurno() {
+		return turno;
+	}
+
+	public void setTurno(Integer turno) {
+		this.turno = turno;
+	}
+
 	public Integer getPontuacao() {
 		return pontuacao;
 	}
@@ -77,6 +87,7 @@ public class TurmaDtoResponse implements Serializable {
 		AnoLetivoDtoResponse anoLetivo;
 		String nome;
 		String descricao;
+		Integer turno;
 		Integer pontuacao;
 		
 		public Builder id(Long id) {
@@ -96,6 +107,11 @@ public class TurmaDtoResponse implements Serializable {
 
 		public Builder descricao(String descricao) {
 			this.descricao = descricao;
+			return this;
+		}
+
+		public Builder turno(Integer turno) {
+			this.turno = turno;
 			return this;
 		}
 
