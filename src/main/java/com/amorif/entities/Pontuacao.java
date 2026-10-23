@@ -3,12 +3,15 @@ package com.amorif.entities;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Objects;
+import java.util.UUID;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -30,7 +33,9 @@ import lombok.Setter;
 @Builder
 @Entity
 @IdClass(PontuacaoID.class)
-@Table(name = "pontuacao")
+@Table(name = "pontuacao", indexes = {
+		@Index(name = "idx_pontuacao_grupo_lancamento", columnList = "grupo_lancamento_id")
+})
 public class Pontuacao implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -71,6 +76,9 @@ public class Pontuacao implements Serializable {
 
 	private boolean anulado;
 
+	@Column(name = "grupo_lancamento_id")
+	private UUID grupoLancamentoId;
+
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date data;
 
@@ -96,7 +104,8 @@ public class Pontuacao implements Serializable {
 	}
 
 	public Pontuacao(Integer contador, Turma turma, Regra regra, AnoLetivo anoLetivo, User user, Olimpiada olimpiada, int bimestre,
-			Integer pontos, String motivacao, String matriculaAluno, boolean aplicado, boolean anulado, Date data) {
+			Integer pontos, String motivacao, String matriculaAluno, boolean aplicado, boolean anulado,
+			UUID grupoLancamentoId, Date data) {
 		super();
 		this.contador = contador;
 		this.turma = turma;
@@ -110,6 +119,7 @@ public class Pontuacao implements Serializable {
 		this.matriculaAluno = matriculaAluno;
 		this.aplicado = aplicado;
 		this.anulado = anulado;
+		this.grupoLancamentoId = grupoLancamentoId;
 		this.data = data;
 	}
 	
