@@ -1,9 +1,14 @@
 package com.amorif.services.impl;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,12 +44,13 @@ class ManagerServiceImplTest {
 	private ManagerServiceImpl service;
 	private PontuacaoDtoRequest request;
 	private Pontuacao pontuacao;
+	private Turma turma;
 
 	@BeforeEach
 	void setUp() {
 		service = new ManagerServiceImpl(turmaRepository, anoLetivoRepository, pontuacaoRepository,
 				olimpiadaRepository);
-		Turma turma = Turma.builder().id(1L).build();
+		turma = Turma.builder().id(1L).build();
 		pontuacao = new Pontuacao();
 		pontuacao.setAnoLetivo(AnoLetivo.builder().id(1L).ano(2023).aberto(false).build());
 		request = new PontuacaoDtoRequest();
@@ -86,5 +92,60 @@ class ManagerServiceImplTest {
 
 		assertThrows(InvalidArgumentException.class, () -> service.approvePoints(request));
 		verify(pontuacaoRepository, never()).save(pontuacao);
+	}
+
+	@Test
+	void shouldApproveEveryPointFromACollectiveLaunch() {
+		UUID grupoLancamentoId = UUID.randomUUID();
+		AnoLetivo openYear = AnoLetivo.builder().id(1L).ano(2023).aberto(true).build();
+		Turma segundaTurma = Turma.builder().id(2L).turno(0).build();
+		Regra regra = Regra.builder().id(3L).operacao("SUB").build();
+		turma.setTurno(0);
+		pontuacao.setContador(1);
+		pontuacao.setTurma(turma);
+		pontuacao.setAnoLetivo(openYear);
+		pontuacao.setBimestre(0);
+		pontuacao.setRegra(regra);
+		pontuacao.setGrupoLancamentoId(grupoLancamentoId);
+		Pontuacao segunda = Pontuacao.builder().contador(1).turma(segundaTurma).anoLetivo(openYear).bimestre(0)
+				.regra(regra).grupoLancamentoId(grupoLancamentoId).build();
+		when(pontuacaoRepository.findAllByGrupoLancamentoId(grupoLancamentoId))
+				.thenReturn(List.of(pontuacao, segunda));
+
+		service.approvePoints(request);
+
+		assertTrue(pontuacao.isAplicado());
+		assertTrue(segunda.isAplicado());
+		assertFalse(pontuacao.isAnulado());
+		assertFalse(segunda.isAnulado());
+		verify(pontuacaoRepository).saveAll(List.of(pontuacao, segunda));
+	}
+
+	@Test
+	void shouldCancelEveryPointFromACollectiveLaunch() {
+		UUID grupoLancamentoId = UUID.randomUUID();
+		AnoLetivo openYear = AnoLetivo.builder().id(1L).ano(2023).aberto(true).build();
+		Turma segundaTurma = Turma.builder().id(2L).turno(1).build();
+		Regra regra = Regra.builder().id(3L).operacao("SUB").build();
+		turma.setTurno(1);
+		pontuacao.setContador(1);
+		pontuacao.setTurma(turma);
+		pontuacao.setAnoLetivo(openYear);
+		pontuacao.setBimestre(0);
+		pontuacao.setRegra(regra);
+		pontuacao.setAplicado(true);
+		pontuacao.setGrupoLancamentoId(grupoLancamentoId);
+		Pontuacao segunda = Pontuacao.builder().contador(1).turma(segundaTurma).anoLetivo(openYear).bimestre(0)
+				.regra(regra).aplicado(true).grupoLancamentoId(grupoLancamentoId).build();
+		when(pontuacaoRepository.findAllByGrupoLancamentoId(grupoLancamentoId))
+				.thenReturn(List.of(pontuacao, segunda));
+
+		service.cancelPoints(request);
+
+		assertFalse(pontuacao.isAplicado());
+		assertFalse(segunda.isAplicado());
+		assertTrue(pontuacao.isAnulado());
+		assertTrue(segunda.isAnulado());
+		verify(pontuacaoRepository).saveAll(List.of(pontuacao, segunda));
 	}
 }

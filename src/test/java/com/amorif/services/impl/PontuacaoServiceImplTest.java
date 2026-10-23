@@ -54,6 +54,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @ActiveProfiles("test")
 @WebMvcTest(PontuacaoServiceImpl.class)
@@ -237,7 +238,30 @@ public class PontuacaoServiceImplTest {
 
 		assertThrows(ClosedSchoolYearException.class, () -> pontuacaoService.deletePontuacao(dtoRequest));
 
-		verify(pontuacaoRepository, never()).deleteByContadorAndTurma_Id(any(), anyLong());
+		verify(pontuacaoRepository, never()).deleteAll(anyList());
+	}
+
+	@Test
+	void deletePontuacao_CollectiveLaunch_ShouldDeleteEveryPointInTheGroup() {
+		UUID grupoLancamentoId = UUID.randomUUID();
+		com.amorif.entities.User creator = com.amorif.entities.User.builder().id(7L).matricula("user").build();
+		Pontuacao primeira = Pontuacao.builder().contador(1).turma(turma).anoLetivo(anoAtual).user(creator).bimestre(0)
+				.grupoLancamentoId(grupoLancamentoId).build();
+		Pontuacao segunda = Pontuacao.builder().contador(1).turma(turma2).anoLetivo(anoAtual).user(creator).bimestre(0)
+				.grupoLancamentoId(grupoLancamentoId).build();
+		dtoRequest.setContador(1);
+		when(pontuacaoRepository.findByContadorAndTurma_Id(1, dtoRequest.getIdTurma())).thenReturn(primeira);
+		when(pontuacaoRepository.findAllByGrupoLancamentoId(grupoLancamentoId))
+				.thenReturn(List.of(primeira, segunda));
+		when(userRepository.findByMatricula("user")).thenReturn(Optional.of(creator));
+		User user = new User("user", "password",
+				Collections.singleton(new SimpleGrantedAuthority("ROLE_APOIO_ACADEMICO")));
+		SecurityContextHolder.getContext().setAuthentication(
+				new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+
+		pontuacaoService.deletePontuacao(dtoRequest);
+
+		verify(pontuacaoRepository).deleteAll(List.of(primeira, segunda));
 	}
 
 	@Test
@@ -498,6 +522,29 @@ public class PontuacaoServiceImplTest {
 		// Verifica se o lançamento foi feito com sucesso
 		assertNotNull(response);
 		assertEquals(2, response.size());
+		assertNotNull(response.getFirst().getGrupoLancamentoId());
+		assertEquals(response.getFirst().getGrupoLancamentoId(), response.getLast().getGrupoLancamentoId());
+		assertEquals(TurnoEnum.MATUTINO.ordinal(), response.getFirst().getTurno());
+	}
+
+	@Test
+	void testThrowPoints_PerTurn_ShouldAllowMoreThanOneCollectiveLaunch() {
+		User userWithPermission = new User("user", "password",
+				Collections.singleton(new SimpleGrantedAuthority("ROLE_APOIO_ACADEMICO")));
+		SecurityContextHolder.getContext().setAuthentication(
+				new UsernamePasswordAuthenticationToken(userWithPermission, null, userWithPermission.getAuthorities()));
+		regra.setTipoRegra(TipoRegra.builder().id(1L).fixo(true)
+				.frequencia(FrequenciaRegraEnum.AVULSO.ordinal()).porTurno(true).build());
+		regra.setValorMinimo(10);
+		dtoRequest.setPontos(10);
+		dtoRequest.setTurno(TurnoEnum.MATUTINO.ordinal());
+
+		List<PontuacaoDtoResponse> firstLaunch = pontuacaoService.throwPoints(dtoRequest);
+		List<PontuacaoDtoResponse> secondLaunch = pontuacaoService.throwPoints(dtoRequest);
+
+		assertNotEquals(firstLaunch.getFirst().getGrupoLancamentoId(),
+				secondLaunch.getFirst().getGrupoLancamentoId());
+		verify(pontuacaoRepository, times(4)).save(any(Pontuacao.class));
 	}
 
 	@Test

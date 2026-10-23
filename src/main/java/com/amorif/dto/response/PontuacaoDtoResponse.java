@@ -2,6 +2,7 @@ package com.amorif.dto.response;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.UUID;
 
 import com.amorif.entities.AnoLetivo;
 
@@ -36,6 +37,8 @@ public class PontuacaoDtoResponse implements Serializable {
 	private Long idUser;
 	private UserDtoResponse criadoPor;
 	private OlimpiadaDtoResponse olimpiada;
+	private UUID grupoLancamentoId;
+	private Integer turno;
 
 	public PontuacaoDtoResponse() {
 
@@ -44,7 +47,7 @@ public class PontuacaoDtoResponse implements Serializable {
 	public PontuacaoDtoResponse(Integer contador, TurmaDtoResponse turma, String nomeTurma, Long idTurma,
 			RegraDtoResponse regra, String operacao, int bimestre, AnoLetivo anoLetivo, Integer pontos,
 			String descricao, boolean aplicado, boolean anulado, String matriculaAluno, Date createdAt, Long idUser,
-			UserDtoResponse criadoPor, OlimpiadaDtoResponse olimpiada) {
+			UserDtoResponse criadoPor, OlimpiadaDtoResponse olimpiada, UUID grupoLancamentoId, Integer turno) {
 		super();
 		this.contador = contador;
 		this.nomeTurma = nomeTurma;
@@ -69,6 +72,8 @@ public class PontuacaoDtoResponse implements Serializable {
 		this.idUser = idUser;
 		this.criadoPor = criadoPor;
 		this.olimpiada = olimpiada;
+		this.grupoLancamentoId = grupoLancamentoId;
+		this.turno = turno;
 	}
 
 }

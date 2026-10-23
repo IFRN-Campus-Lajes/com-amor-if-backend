@@ -72,11 +72,14 @@ public class ManagerServiceImpl implements ManagerService {
 		if (turma != null) {
 			Pontuacao pontuacao = this.pontuacaoRepository.getByContadorTurma(request.getContador(), turma);
 			if (pontuacao != null) {
-				ensureSchoolYearIsOpen(pontuacao);
-				ensureOlympiadParticipationIsAvailable(pontuacao);
-				pontuacao.setAplicado(true);
-				pontuacao.setAnulado(false);
-				pontuacao = this.pontuacaoRepository.save(pontuacao);
+				List<Pontuacao> pontuacoes = pontosDoMesmoLancamento(pontuacao);
+				for (Pontuacao pontoDoLancamento : pontuacoes) {
+					ensureSchoolYearIsOpen(pontoDoLancamento);
+					ensureOlympiadParticipationIsAvailable(pontoDoLancamento);
+					pontoDoLancamento.setAplicado(true);
+					pontoDoLancamento.setAnulado(false);
+				}
+				this.pontuacaoRepository.saveAll(pontuacoes);
 
 				logger.info("PONTUACAO APLICADA | REGRA: " + pontuacao.getRegra().getDescricao() + " | "
 						+ pontuacao.getTurma().getNome() + " | CONTADOR: " + pontuacao.getContador());
@@ -91,15 +94,19 @@ public class ManagerServiceImpl implements ManagerService {
 	}
 
 	@Override
+	@Transactional
 	public PontuacaoDtoResponse cancelPoints(PontuacaoDtoRequest request) {
 		Turma turma = this.turmaRepository.getReferenceById(request.getIdTurma());
 		if (turma != null) {
 			Pontuacao pontuacao = this.pontuacaoRepository.getByContadorTurma(request.getContador(), turma);
 			if (pontuacao != null) {
-				ensureSchoolYearIsOpen(pontuacao);
-				pontuacao.setAnulado(true);
-				pontuacao.setAplicado(false);
-				pontuacao = this.pontuacaoRepository.save(pontuacao);
+				List<Pontuacao> pontuacoes = pontosDoMesmoLancamento(pontuacao);
+				for (Pontuacao pontoDoLancamento : pontuacoes) {
+					ensureSchoolYearIsOpen(pontoDoLancamento);
+					pontoDoLancamento.setAnulado(true);
+					pontoDoLancamento.setAplicado(false);
+				}
+				this.pontuacaoRepository.saveAll(pontuacoes);
 
 				logger.info("PONTUACAO ANULADA | REGRA: " + pontuacao.getRegra().getDescricao() + " | "
 						+ pontuacao.getTurma().getNome() + " | CONTADOR: " + pontuacao.getContador());
@@ -117,6 +124,13 @@ public class ManagerServiceImpl implements ManagerService {
 	@Transactional
 	public List<PontuacaoDtoResponse> approveAllPoints(List<PontuacaoDtoRequest> requests) {
 		return requests.stream().map(this::approvePoints).toList();
+	}
+
+	private List<Pontuacao> pontosDoMesmoLancamento(Pontuacao pontuacao) {
+		if (pontuacao.getGrupoLancamentoId() == null) {
+			return List.of(pontuacao);
+		}
+		return pontuacaoRepository.findAllByGrupoLancamentoId(pontuacao.getGrupoLancamentoId());
 	}
 
 	private void ensureSchoolYearIsOpen(Pontuacao pontuacao) {
@@ -153,6 +167,7 @@ public class ManagerServiceImpl implements ManagerService {
 				.descricao(pontuacao.getMotivacao()).pontos(pontuacao.getPontos())
 				.operacao(pontuacao.getRegra().getOperacao().toString()).aplicado(pontuacao.isAplicado())
 				.anulado(pontuacao.isAnulado()).olimpiada(OlimpiadaDtoResponse.fromOlimpiada(pontuacao.getOlimpiada()))
+				.grupoLancamentoId(pontuacao.getGrupoLancamentoId()).turno(pontuacao.getTurma().getTurno())
 				.build();
 	}
 }

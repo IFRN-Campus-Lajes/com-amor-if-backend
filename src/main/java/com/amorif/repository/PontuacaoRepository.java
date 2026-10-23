@@ -1,6 +1,7 @@
 package com.amorif.repository;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -94,6 +95,8 @@ public interface PontuacaoRepository extends JpaRepository<Pontuacao, Integer> {
 	List<Pontuacao> findByTurma(@Param("turma") Turma turma);
 
 	Pontuacao findByContadorAndTurma_Id(Integer contador, Long turmaId);
+
+	List<Pontuacao> findAllByGrupoLancamentoId(UUID grupoLancamentoId);
 
 	void deleteByContadorAndTurma_Id(Integer contador, Long turmaId);
 }
