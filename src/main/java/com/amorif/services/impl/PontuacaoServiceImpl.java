@@ -231,6 +231,10 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 
 			if (turno != null && turno >= 0 && turno < TurnoEnum.values().length) {
 				List<Turma> turmas = turmaRepository.findAllByTurnoAndAnoLetivo(turno, anoAtual);
+				if (turmas.isEmpty()) {
+					throw new InvalidTurnException(
+							"Não há turmas cadastradas para o turno selecionado no ano letivo aberto.");
+				}
 				UUID grupoLancamentoId = UUID.randomUUID();
 
 				for (Turma turma : turmas) {

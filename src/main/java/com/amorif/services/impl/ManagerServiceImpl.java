@@ -17,8 +17,10 @@ import com.amorif.dto.response.TurmaDtoResponse;
 import com.amorif.entities.AnoLetivo;
 import com.amorif.entities.Pontuacao;
 import com.amorif.entities.Turma;
+import com.amorif.entities.TurnoEnum;
 import com.amorif.exceptions.InvalidArgumentException;
 import com.amorif.exceptions.ClosedSchoolYearException;
+import com.amorif.exceptions.InvalidTurnException;
 import com.amorif.repository.AnoLetivoRepository;
 import com.amorif.repository.PontuacaoRepository;
 import com.amorif.repository.OlimpiadaRepository;
@@ -48,6 +50,7 @@ public class ManagerServiceImpl implements ManagerService {
 
 	@Override
 	public TurmaDtoResponse createTurma(TurmaDtoRequest request) {
+		Integer turno = requireValidTurn(request.getTurno());
 		Optional<AnoLetivo> ano = Optional
 				.ofNullable(this.anoLetivoRepository.getOpenAnoLetivoById(request.getIdAnoLetivo())
 						.orElseThrow(() -> new InvalidArgumentException("O ano letivo não existe ou está encerrado!")));
@@ -57,7 +60,7 @@ public class ManagerServiceImpl implements ManagerService {
 						"Já existe uma turma cadastrada com esse nome para o ano letivo selecionado!");
 			}
 			Turma turma = Turma.builder().anoLetivo((AnoLetivo) ano.get()).nome(request.getNome())
-					.descricao(request.getDescricao()).build();
+					.descricao(request.getDescricao()).turno(turno).build();
 			this.turmaRepository.save(turma);
 			return turmaToTurmaDtoResponse(turma);
 		} else {
@@ -156,9 +159,17 @@ public class ManagerServiceImpl implements ManagerService {
 
 	private TurmaDtoResponse turmaToTurmaDtoResponse(Turma turma) {
 		return TurmaDtoResponse.builder()
+				.id(turma.getId())
 				.anoLetivo(new AnoLetivoDtoResponse.Builder().id(turma.getAnoLetivo().getId())
 						.anoLetivo(turma.getAnoLetivo().getAno()).build())
-				.nome(turma.getNome()).descricao(turma.getDescricao()).pontuacao(0).build();
+				.nome(turma.getNome()).descricao(turma.getDescricao()).turno(turma.getTurno()).pontuacao(0).build();
+	}
+
+	private Integer requireValidTurn(Integer turno) {
+		if (turno == null || turno < 0 || turno >= TurnoEnum.values().length) {
+			throw new InvalidTurnException("Selecione um turno válido para a turma.");
+		}
+		return turno;
 	}
 
 	private PontuacaoDtoResponse dtoFromPontuacao(Pontuacao pontuacao) {

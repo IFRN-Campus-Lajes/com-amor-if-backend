@@ -548,6 +548,24 @@ public class PontuacaoServiceImplTest {
 	}
 
 	@Test
+	void testThrowPoints_PerTurnWithoutClasses_ShouldRejectLaunch() {
+		User userWithPermission = new User("user", "password",
+				Collections.singleton(new SimpleGrantedAuthority("ROLE_APOIO_ACADEMICO")));
+		SecurityContextHolder.getContext().setAuthentication(
+				new UsernamePasswordAuthenticationToken(userWithPermission, null, userWithPermission.getAuthorities()));
+		regra.setTipoRegra(TipoRegra.builder().id(1L).fixo(true)
+				.frequencia(FrequenciaRegraEnum.AVULSO.ordinal()).porTurno(true).build());
+		regra.setValorMinimo(10);
+		dtoRequest.setPontos(10);
+		dtoRequest.setTurno(TurnoEnum.MATUTINO.ordinal());
+		when(turmaRepository.findAllByTurnoAndAnoLetivo(TurnoEnum.MATUTINO.ordinal(), anoAtual))
+				.thenReturn(Collections.emptyList());
+
+		assertThrows(InvalidTurnException.class, () -> pontuacaoService.throwPoints(dtoRequest));
+		verify(pontuacaoRepository, never()).save(any(Pontuacao.class));
+	}
+
+	@Test
 	public void testThrowPoints_InactiveRule_ShouldNotRegisterPoints() {
 		User userWithPermission = new User("user", "password",
 				Collections.singleton(new SimpleGrantedAuthority("ROLE_APOIO_ACADEMICO")));
