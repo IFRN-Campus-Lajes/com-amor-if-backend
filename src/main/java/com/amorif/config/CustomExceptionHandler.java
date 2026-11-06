@@ -24,6 +24,7 @@ import com.amorif.exceptions.InvalidTurnException;
 import com.amorif.exceptions.InvalidVariableValueException;
 import com.amorif.exceptions.PointsAlreadyCancelledOrAppliedException;
 import com.amorif.exceptions.PointsNotFoundException;
+import com.amorif.exceptions.ReferencedSenseException;
 import com.amorif.exceptions.RuleNotFoundException;
 import com.amorif.exceptions.TurmaNotFoundException;
 import com.amorif.exceptions.UserAlreadyExistsException;
@@ -31,6 +32,12 @@ import com.amorif.exceptions.UserHasNoPermitedRoleException;
 
 @ControllerAdvice
 public class CustomExceptionHandler extends ResponseEntityExceptionHandler {
+
+	@ExceptionHandler(ReferencedSenseException.class)
+	public ResponseEntity<Object> handleReferencedSenseException(ReferencedSenseException e, WebRequest request) {
+		ErrorMessageDtoResponse eMessage = new ErrorMessageDtoResponse(HttpStatus.CONFLICT, e.getMessage());
+		return new ResponseEntity<Object>(eMessage, new HttpHeaders(), eMessage.getStatus());
+	}
 
 	@ExceptionHandler(ClosedSchoolYearException.class)
 	public ResponseEntity<Object> handleClosedSchoolYearException(ClosedSchoolYearException e, WebRequest request) {

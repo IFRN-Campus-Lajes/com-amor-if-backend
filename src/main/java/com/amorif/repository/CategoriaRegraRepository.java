@@ -10,4 +10,5 @@ import com.amorif.entities.CategoriaRegra;
 public interface CategoriaRegraRepository extends JpaRepository<CategoriaRegra, Long> {
     List<CategoriaRegra> findAllByOrderBySenso_DescricaoAscNomeAsc();
     Optional<CategoriaRegra> findByNomeIgnoreCaseAndSenso_Id(String nome, Long sensoId);
+    boolean existsBySenso_Id(Long sensoId);
 }

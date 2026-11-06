@@ -32,15 +32,20 @@ public class Senso implements Serializable {
 
 	@Column(nullable = false, unique = true)
 	private String descricao;
+
+	@Column(nullable = false)
+	@Builder.Default
+	private boolean ativo = true;
 	
 	@OneToMany(mappedBy = "senso", cascade = CascadeType.ALL, orphanRemoval = true)
 	@JsonIgnore
     private List<Regra> regras;
 
-	public Senso(Long id, String descricao, List<Regra> regras) {
+	public Senso(Long id, String descricao, boolean ativo, List<Regra> regras) {
 		super();
 		this.id = id;
 		this.descricao = descricao;
+		this.ativo = ativo;
 		this.regras = regras;
 	}
 	
