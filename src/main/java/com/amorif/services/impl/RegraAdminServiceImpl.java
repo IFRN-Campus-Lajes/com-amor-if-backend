@@ -132,6 +132,7 @@ public class RegraAdminServiceImpl implements RegraAdminService {
             throw new InvalidArgumentException("O valor mínimo deve ser maior ou igual a zero.");
         Senso senso = sensoRepository.findById(request.sensoId())
                 .orElseThrow(() -> new InvalidArgumentException("Senso inválido."));
+        if (!senso.isAtivo()) throw new InvalidArgumentException("Selecione um senso ativo.");
         TipoRegra tipo = tipoRegraRepository.findById(request.tipoRegraId())
                 .orElseThrow(() -> new InvalidArgumentException("Tipo de regra inválido."));
         int maximoInformado = request.valorMaximo() == null ? request.valorMinimo() : request.valorMaximo();

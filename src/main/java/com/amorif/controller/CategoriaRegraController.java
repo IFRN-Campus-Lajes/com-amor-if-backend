@@ -95,8 +95,10 @@ public class CategoriaRegraController {
 
     private Senso validarSenso(Long sensoId) {
         if (sensoId == null) throw new InvalidArgumentException("Selecione o senso da categoria.");
-        return sensoRepository.findById(sensoId)
+        Senso senso = sensoRepository.findById(sensoId)
                 .orElseThrow(() -> new InvalidArgumentException("Senso inválido."));
+        if (!senso.isAtivo()) throw new InvalidArgumentException("Selecione um senso ativo.");
+        return senso;
     }
 
     private String limpar(String valor) { return valor == null || valor.isBlank() ? null : valor.trim(); }

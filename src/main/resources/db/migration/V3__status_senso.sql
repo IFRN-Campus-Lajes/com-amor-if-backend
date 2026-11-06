@@ -1,0 +1,5 @@
+ALTER TABLE senso
+    ADD COLUMN IF NOT EXISTS ativo BOOLEAN NOT NULL DEFAULT TRUE;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_senso_descricao_ci
+    ON senso (LOWER(TRIM(descricao)));
