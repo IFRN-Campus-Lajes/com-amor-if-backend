@@ -24,16 +24,16 @@ public interface PontuacaoRepository extends JpaRepository<Pontuacao, Integer> {
 	boolean existsByYearAndRule(@Param("anoLetivoId") Long anoLetivoId, @Param("regraId") Long regraId,
 			@Param("turmaId") Long turmaId);
 
-	@Query("SELECT COUNT(p) > 0 FROM Pontuacao p WHERE p.bimestre = :bimestre AND p.regra.id = :regraId AND p.turma.id = :turmaId AND p.anulado = false")
-	boolean existsByBimesterAndRule(@Param("bimestre") Integer bimestre, @Param("regraId") Long regraId,
+	@Query("SELECT COUNT(p) > 0 FROM Pontuacao p WHERE p.anoLetivo.id = :anoLetivoId AND p.bimestre = :bimestre AND p.regra.id = :regraId AND p.turma.id = :turmaId AND p.anulado = false")
+	boolean existsByBimesterAndRule(@Param("anoLetivoId") Long anoLetivoId, @Param("bimestre") Integer bimestre, @Param("regraId") Long regraId,
 			@Param("turmaId") Long turmaId);
 
 	@Query("SELECT COUNT(p) > 0 FROM Pontuacao p WHERE p.anoLetivo.id = :anoLetivoId AND p.turma.id = :turmaId AND p.anulado = false AND p.regra.grupo = :grupo AND p.user = :user")
 	boolean existsByYearAndGroup(@Param("anoLetivoId") Long anoLetivoId, @Param("turmaId") Long turmaId,
 			@Param("grupo") String grupo, @Param("user") User user);
 
-	@Query("SELECT COUNT(p) > 0 FROM Pontuacao p WHERE p.bimestre = :bimestre AND p.turma.id = :turmaId AND p.anulado = false AND p.regra.grupo = :grupo AND p.user = :user")
-	boolean existsByBimesterAndGroup(@Param("bimestre") Integer bimestre, @Param("turmaId") Long turmaId,
+	@Query("SELECT COUNT(p) > 0 FROM Pontuacao p WHERE p.anoLetivo.id = :anoLetivoId AND p.bimestre = :bimestre AND p.turma.id = :turmaId AND p.anulado = false AND p.regra.grupo = :grupo AND p.user = :user")
+	boolean existsByBimesterAndGroup(@Param("anoLetivoId") Long anoLetivoId, @Param("bimestre") Integer bimestre, @Param("turmaId") Long turmaId,
 			@Param("grupo") String grupo, @Param("user") User user);
 
 	@Query("SELECT COUNT(p) > 0 FROM Pontuacao p WHERE p.anoLetivo.id = :anoLetivoId AND p.regra.id = :regraId AND p.turma.id = :turmaId AND matriculaAluno = :matriculaAluno AND p.anulado = false")

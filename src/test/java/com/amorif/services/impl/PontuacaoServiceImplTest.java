@@ -397,7 +397,7 @@ public class PontuacaoServiceImplTest {
 				new UsernamePasswordAuthenticationToken(userWithPermission, null, userWithPermission.getAuthorities()));
 
 		// Mockando o comportamento do repository
-		when(pontuacaoRepository.existsByBimesterAndRule(0, regra.getId(), turma.getId())).thenReturn(false);
+		when(pontuacaoRepository.existsByBimesterAndRule(anoAtual.getId(), 0, regra.getId(), turma.getId())).thenReturn(false);
 
 		// Configurando a regra e o DTO
 		TipoRegra tr2 = TipoRegra.builder().id(1L).fixo(true).frequencia(FrequenciaRegraEnum.BIMESTRAL.ordinal())
@@ -423,7 +423,7 @@ public class PontuacaoServiceImplTest {
 				new UsernamePasswordAuthenticationToken(userWithPermission, null, userWithPermission.getAuthorities()));
 
 		// Mockando o comportamento do repository
-		when(pontuacaoRepository.existsByBimesterAndRule(0, regra.getId(), turma.getId())).thenReturn(true);
+		when(pontuacaoRepository.existsByBimesterAndRule(anoAtual.getId(), 0, regra.getId(), turma.getId())).thenReturn(true);
 
 		// Configurando a regra e o DTO
 		TipoRegra tr2 = TipoRegra.builder().id(1L).fixo(true).frequencia(FrequenciaRegraEnum.BIMESTRAL.ordinal())
@@ -440,9 +440,25 @@ public class PontuacaoServiceImplTest {
 		});
 
 		// Verifica se o método do repositório foi chamado com os parâmetros corretos
-		verify(pontuacaoRepository).existsByBimesterAndRule(0, regra.getId(), turma.getId());
-		verify(pontuacaoRepository, never()).existsByBimesterAndGroup(anyInt(), anyLong(), anyString(), any());
+		verify(pontuacaoRepository).existsByBimesterAndRule(anoAtual.getId(), 0, regra.getId(), turma.getId());
+		verify(pontuacaoRepository, never()).existsByBimesterAndGroup(anyLong(), anyInt(), anyLong(), anyString(), any());
 	}
+
+    @Test
+    void regraBimestralAgrupadaValidaAnoAtualEProfessorDoLancamento() {
+        User principal = new User("user", "password",
+            List.of(new SimpleGrantedAuthority("ROLE_APOIO_ACADEMICO")));
+        SecurityContextHolder.getContext().setAuthentication(
+            new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+        regra.setGrupo("media_comparativa");
+        regra.setTipoRegra(TipoRegra.builder().frequencia(FrequenciaRegraEnum.BIMESTRAL.ordinal()).build());
+        var professor = userRepository.findByMatricula("user").orElseThrow();
+        when(pontuacaoRepository.existsByBimesterAndGroup(anoAtual.getId(), 0, turma.getId(), regra.getGrupo(), professor))
+            .thenReturn(true);
+        assertThrows(BimonthlyRuleException.class, () -> pontuacaoService.throwPoints(dtoRequest));
+        verify(pontuacaoRepository).existsByBimesterAndGroup(anoAtual.getId(), 0, turma.getId(), regra.getGrupo(), professor);
+        verify(pontuacaoRepository, never()).existsByBimesterAndRule(anyLong(), anyInt(), anyLong(), anyLong());
+    }
 
 	@Test
 	public void testThrowPoints_PerYear_ShouldRegisterPoints() {

@@ -428,7 +428,7 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 			}
 
 			if (freq == FrequenciaRegraEnum.BIMESTRAL) {
-				if (pontuacaoRepository.existsByBimesterAndGroup(bimestre, turmaId, regra.getGrupo(), user)) {
+				if (pontuacaoRepository.existsByBimesterAndGroup(anoAtual.getId(), bimestre, turmaId, regra.getGrupo(), user)) {
 					throw new BimonthlyRuleException(
 							"Já existe uma pontuação bimestral criada por você para esta turma no bimestre fornecido nesse grupo de regras.");
 				}
@@ -441,7 +441,7 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 			}
 
 			if (freq == FrequenciaRegraEnum.BIMESTRAL) {
-				if (pontuacaoRepository.existsByBimesterAndRule(bimestre, regra.getId(), turmaId)) {
+				if (pontuacaoRepository.existsByBimesterAndRule(anoAtual.getId(), bimestre, regra.getId(), turmaId)) {
 					throw new BimonthlyRuleException(
 							"Já existe uma pontuação bimestral para esta turma no bimestre fornecido.");
 				}
