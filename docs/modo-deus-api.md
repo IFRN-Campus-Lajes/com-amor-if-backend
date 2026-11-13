@@ -41,3 +41,10 @@ Categorias usadas por regras não podem ser excluídas. Elas podem ser renomeada
 ## Fonte de verdade
 
 O perfil de produção não popula nem sincroniza regras durante a inicialização. O catálogo persistido no banco é a única fonte de verdade; as antigas definições em `ProdConfig`, `RegraCategorias` e `RegraCatalogoSincronizador` permanecem apenas como histórico do sistema.
+
+## Regras automáticas (issue #5)
+
+Regras com tipo automático permanecem visíveis, mas são somente para consulta.
+A API rejeita criação, edição, conversão para esse tipo e mudança de status.
+As condições dos dois bônus históricos permanecem no código. Consulte
+[regras automáticas](regras-automaticas.md) para execução mensal e reprocessamento.

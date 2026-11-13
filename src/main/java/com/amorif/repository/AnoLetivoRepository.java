@@ -12,6 +12,10 @@ import com.amorif.entities.AnoLetivo;
  */
 
 public interface AnoLetivoRepository extends JpaRepository<AnoLetivo, Long> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from AnoLetivo a where a.aberto = true order by a.ano desc limit 1")
+    AnoLetivo getLastActiveAnoLetivoForUpdate();
+
 	
 	// Get the last active AnoLetivo
 	@Query(value = "SELECT a FROM AnoLetivo a "

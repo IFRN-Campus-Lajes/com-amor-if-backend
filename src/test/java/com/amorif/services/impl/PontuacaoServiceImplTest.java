@@ -39,8 +39,6 @@ import com.amorif.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -61,7 +59,6 @@ import java.util.UUID;
 @Import({ TestSecurityConfig.class, JWTTokenProviderMock.class })
 public class PontuacaoServiceImplTest {
 
-	@InjectMocks
 	private PontuacaoServiceImpl pontuacaoService;
 
 	@MockBean
@@ -85,6 +82,9 @@ public class PontuacaoServiceImplTest {
 	@MockBean
 	private OlimpiadaRepository olimpiadaRepository;
 
+    @MockBean
+    private com.amorif.services.automaticas.ExecucaoAutomaticaService automaticas;
+
 	private Turma turma;
 	private Turma turma2;
 	private Turma turma3;
@@ -100,7 +100,10 @@ public class PontuacaoServiceImplTest {
 
 	@BeforeEach
 	public void setup() {
-		MockitoAnnotations.openMocks(this);
+        pontuacaoService = new PontuacaoServiceImpl(pontuacaoRepository, turmaRepository, regraRepository,
+            anoLetivoRepository, userRepository, olimpiadaRepository, automaticas);
+        when(turmaRepository.findByIdForUpdate(anyLong())).thenAnswer(invocation ->
+            Optional.ofNullable(turmaRepository.getReferenceById(invocation.getArgument(0))));
 
 		turma = new Turma();
 		turma.setId(1L);
@@ -215,22 +218,18 @@ public class PontuacaoServiceImplTest {
 		verify(pontuacaoRepository, never()).pontosByAno(anyLong());
 	}
 
-	@Test
-	void throwAutoPoints_WhenThereIsNoOpenSchoolYear_ShouldNotReprocessPoints() {
-		when(anoLetivoRepository.getLastActiveAnoLetivo()).thenReturn(null);
-
-		assertThrows(ClosedSchoolYearException.class, () -> pontuacaoService.throwAutoPoints(dtoRequest));
-
-		verify(pontuacaoRepository, never()).save(any(Pontuacao.class));
-		verifyNoInteractions(regraRepository);
-		verify(turmaRepository, never()).findTurmasQualificadasParaBonus(anyLong(), anyList(), anyInt(),
-				eq(anoAtual));
-	}
+    @Test
+    void throwAutoPoints_WhenThereIsNoOpenSchoolYear_ShouldNotReprocessPoints() {
+        when(automaticas.processar(dtoRequest.getBimestre())).thenThrow(new ClosedSchoolYearException("Fechado"));
+        assertThrows(ClosedSchoolYearException.class, () -> pontuacaoService.throwAutoPoints(dtoRequest));
+        verify(pontuacaoRepository, never()).save(any(Pontuacao.class));
+    }
 
 	@Test
 	void deletePontuacao_WhenItsSchoolYearIsClosed_ShouldNotDeletePoints() {
 		AnoLetivo anoFechado = AnoLetivo.builder().id(1L).ano(2023).aberto(false).build();
 		Pontuacao pontuacao = new Pontuacao();
+        pontuacao.setRegra(regra);
 		pontuacao.setAnoLetivo(anoFechado);
 		dtoRequest.setContador(1);
 		when(pontuacaoRepository.findByContadorAndTurma_Id(dtoRequest.getContador(), dtoRequest.getIdTurma()))
@@ -245,9 +244,9 @@ public class PontuacaoServiceImplTest {
 	void deletePontuacao_CollectiveLaunch_ShouldDeleteEveryPointInTheGroup() {
 		UUID grupoLancamentoId = UUID.randomUUID();
 		com.amorif.entities.User creator = com.amorif.entities.User.builder().id(7L).matricula("user").build();
-		Pontuacao primeira = Pontuacao.builder().contador(1).turma(turma).anoLetivo(anoAtual).user(creator).bimestre(0)
+		Pontuacao primeira = Pontuacao.builder().regra(regra).contador(1).turma(turma).anoLetivo(anoAtual).user(creator).bimestre(0)
 				.grupoLancamentoId(grupoLancamentoId).build();
-		Pontuacao segunda = Pontuacao.builder().contador(1).turma(turma2).anoLetivo(anoAtual).user(creator).bimestre(0)
+		Pontuacao segunda = Pontuacao.builder().regra(regra).contador(1).turma(turma2).anoLetivo(anoAtual).user(creator).bimestre(0)
 				.grupoLancamentoId(grupoLancamentoId).build();
 		dtoRequest.setContador(1);
 		when(pontuacaoRepository.findByContadorAndTurma_Id(1, dtoRequest.getIdTurma())).thenReturn(primeira);
@@ -787,151 +786,25 @@ public class PontuacaoServiceImplTest {
 		verify(pontuacaoRepository, never()).save(any(Pontuacao.class));
 	}
 
-	@Test
-	void testThrowAutoPoints_WhenTurmasQualificadas_ShouldSavePontuacoes() {
-	    // Mockando o contexto de segurança
-	    User userWithPermission = new User("user", "password",
-	            Collections.singleton(new SimpleGrantedAuthority("ROLE_ADMINISTRADOR")));
-	    SecurityContextHolder.getContext().setAuthentication(
-	            new UsernamePasswordAuthenticationToken(userWithPermission, null, userWithPermission.getAuthorities()));
+    @Test
+    void rejectsDirectLaunchAndDeletionOfAutomaticBonus() {
+        regra.getTipoRegra().setAutomatico(true);
+        assertThrows(com.amorif.exceptions.InvalidArgumentException.class,
+            () -> pontuacaoService.throwPoints(dtoRequest));
+        dtoRequest.setContador(1);
+        Pontuacao bonus = Pontuacao.builder().regra(regra).anoLetivo(anoAtual).bimestre(0).build();
+        when(pontuacaoRepository.findByContadorAndTurma_Id(dtoRequest.getContador(), dtoRequest.getIdTurma()))
+            .thenReturn(bonus);
+        assertThrows(com.amorif.exceptions.InvalidArgumentException.class,
+            () -> pontuacaoService.deletePontuacao(dtoRequest));
+        verify(pontuacaoRepository, never()).save(any(Pontuacao.class));
+        verify(pontuacaoRepository, never()).deleteAll(anyList());
+    }
 
-	    // Configurar dados de teste
-	    Turma turma1 = Turma.builder().id(1L).nome("Turma A").build();
-	    List<Turma> turmasLimpeza = Arrays.asList(turma1);
-	    List<Turma> turmasOrdenacao = Arrays.asList(turma1);
-
-	    // Mock para regras específicas
-	    when(turmaRepository.findTurmasQualificadasParaBonus(16L, Arrays.asList(13L, 14L, 15L, 17L, 18L), 1,
-	            anoAtual))
-	            .thenReturn(turmasLimpeza);
-	    when(turmaRepository.findTurmasQualificadasParaBonus(10L, Arrays.asList(7L, 8L, 9L, 12L, 11L), 1,
-	            anoAtual))
-	            .thenReturn(turmasOrdenacao);
-
-	    when(regraRepository.findById(18L)).thenReturn(Optional.of(regraLimpeza));
-	    when(regraRepository.findById(11L)).thenReturn(Optional.of(regraOrdenacao));
-	    
-	    when(regraRepository.getReferenceById(18L)).thenReturn(regraLimpeza);
-	    when(regraRepository.getReferenceById(11L)).thenReturn(regraOrdenacao);
-
-	    // Chamar o método
-	    PontuacaoDtoRequest dtoRequest = new PontuacaoDtoRequest();
-	    dtoRequest.setBimestre(1);
-
-	    pontuacaoService.throwAutoPoints(dtoRequest);
-
-	    // Verificar que as pontuações foram salvas corretamente
-	    ArgumentCaptor<Pontuacao> pontuacaoCaptor = ArgumentCaptor.forClass(Pontuacao.class);
-	    verify(pontuacaoRepository, times(2)).save(pontuacaoCaptor.capture());
-
-	    List<Pontuacao> savedPontuacoes = pontuacaoCaptor.getAllValues();
-	    assertEquals(2, savedPontuacoes.size());
-	    assertEquals(18L, savedPontuacoes.get(0).getRegra().getId());
-	    assertEquals(11L, savedPontuacoes.get(1).getRegra().getId());
-	}
-	
-	@Test
-	void testThrowAutoPoints_WhenNoTurmasQualificadas_ShouldNotSavePontuacoes() {
-	    // Mockando o contexto de segurança
-	    User userWithPermission = new User("user", "password",
-	            Collections.singleton(new SimpleGrantedAuthority("ROLE_ADMINISTRADOR")));
-	    SecurityContextHolder.getContext().setAuthentication(
-	            new UsernamePasswordAuthenticationToken(userWithPermission, null, userWithPermission.getAuthorities()));
-
-	    // Mock para listas vazias
-	    when(turmaRepository.findTurmasQualificadasParaBonus(16L, Arrays.asList(13L, 14L, 15L, 17L), 1,
-	            anoAtual))
-	            .thenReturn(Collections.emptyList());
-	    when(turmaRepository.findTurmasQualificadasParaBonus(10L, Arrays.asList(7L, 8L, 9L, 12L), 1,
-	            anoAtual))
-	            .thenReturn(Collections.emptyList());
-	    
-	    when(regraRepository.findById(18L)).thenReturn(Optional.of(regraLimpeza));
-	    when(regraRepository.findById(11L)).thenReturn(Optional.of(regraOrdenacao));
-
-	    PontuacaoDtoRequest dtoRequest = new PontuacaoDtoRequest();
-	    dtoRequest.setBimestre(1);
-
-	    List<PontuacaoDtoResponse> responses = pontuacaoService.throwAutoPoints(dtoRequest);
-
-	    // Verificar que nenhuma pontuação foi salva
-	    verify(pontuacaoRepository, never()).save(any(Pontuacao.class));
-	    assertTrue(responses.isEmpty());
-	}
-	
-	@Test
-	void testThrowAutoPoints_WhenOnlyOneRegraHasTurmasQualificadas_ShouldSavePontuacoesForThatRegra() {
-	    // Mockando o contexto de segurança
-	    User userWithPermission = new User("user", "password",
-	            Collections.singleton(new SimpleGrantedAuthority("ROLE_ADMINISTRADOR")));
-	    SecurityContextHolder.getContext().setAuthentication(
-	            new UsernamePasswordAuthenticationToken(userWithPermission, null, userWithPermission.getAuthorities()));
-
-	    Turma turma1 = Turma.builder().id(1L).nome("Turma A").build();
-	    List<Turma> turmasOrdenacao = Arrays.asList(turma1);
-
-	    // Mock para apenas uma regra qualificada
-	    when(turmaRepository.findTurmasQualificadasParaBonus(16L, Arrays.asList(13L, 14L, 15L, 17L, 18L), 1,
-	            anoAtual))
-	            .thenReturn(Collections.emptyList());
-	    when(turmaRepository.findTurmasQualificadasParaBonus(10L, Arrays.asList(7L, 8L, 9L, 12L, 11L), 1,
-	            anoAtual))
-	            .thenReturn(turmasOrdenacao);
-
-	    when(regraRepository.findById(18L)).thenReturn(Optional.of(regraLimpeza));
-	    when(regraRepository.findById(11L)).thenReturn(Optional.of(regraOrdenacao));
-	    
-	    when(regraRepository.getReferenceById(18L)).thenReturn(regraLimpeza);
-	    when(regraRepository.getReferenceById(11L)).thenReturn(regraOrdenacao);
-	    
-	    PontuacaoDtoRequest dtoRequest = new PontuacaoDtoRequest();
-	    dtoRequest.setBimestre(1);
-
-	    pontuacaoService.throwAutoPoints(dtoRequest);
-
-	    // Verificar que apenas pontuações da regra ordenação foram salvas
-	    ArgumentCaptor<Pontuacao> pontuacaoCaptor = ArgumentCaptor.forClass(Pontuacao.class);
-	    verify(pontuacaoRepository, times(1)).save(pontuacaoCaptor.capture());
-
-	    List<Pontuacao> savedPontuacoes = pontuacaoCaptor.getAllValues();
-	    assertEquals(1, savedPontuacoes.size());
-	    assertEquals(11L, savedPontuacoes.get(0).getRegra().getId());
-	}
-	
-	@Test
-	void testThrowAutoPoints_WhenRegraNotFound_ShouldThrowException() {
-	    when(regraRepository.findById(18L)).thenReturn(Optional.empty());
-
-	    PontuacaoDtoRequest dtoRequest = new PontuacaoDtoRequest();
-	    dtoRequest.setBimestre(1);
-
-	    assertThrows(RuleNotFoundException.class, () -> pontuacaoService.throwAutoPoints(dtoRequest));
-	}
-
-	@Test
-	void testThrowAutoPoints_WhenTurmaWithInvalidId_ShouldNotSave() {
-	    // Mockando o contexto de segurança
-	    User userWithPermission = new User("user", "password",
-	            Collections.singleton(new SimpleGrantedAuthority("ROLE_ADMINISTRADOR")));
-	    SecurityContextHolder.getContext().setAuthentication(
-	            new UsernamePasswordAuthenticationToken(userWithPermission, null, userWithPermission.getAuthorities()));
-
-	    Turma turmaInvalida = Turma.builder().id(null).nome("Turma X").build();
-	    List<Turma> turmas = Arrays.asList(turmaInvalida);
-
-	    when(turmaRepository.findTurmasQualificadasParaBonus(16L, Arrays.asList(13L, 14L, 15L, 17L), 1,
-	            anoAtual))
-	            .thenReturn(turmas);
-
-	    when(regraRepository.findById(11L)).thenReturn(Optional.of(regraLimpeza));
-	    when(regraRepository.findById(18L)).thenReturn(Optional.of(regraOrdenacao));
-
-	    PontuacaoDtoRequest dtoRequest = new PontuacaoDtoRequest();
-	    dtoRequest.setBimestre(1);
-
-	    pontuacaoService.throwAutoPoints(dtoRequest);
-
-	    verify(pontuacaoRepository, never()).save(any(Pontuacao.class));
-	}
-
+    @Test
+    void throwAutoPoints_DelegatesToSharedProcessor() {
+        when(automaticas.processar(dtoRequest.getBimestre())).thenReturn(List.of());
+        assertTrue(pontuacaoService.throwAutoPoints(dtoRequest).isEmpty());
+        verify(automaticas).processar(dtoRequest.getBimestre());
+    }
 }
