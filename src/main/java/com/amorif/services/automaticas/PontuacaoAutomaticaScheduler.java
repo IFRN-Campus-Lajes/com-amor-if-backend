@@ -11,7 +11,7 @@ import com.amorif.exceptions.ClosedSchoolYearException;
 
 @Configuration
 @EnableScheduling
-@Profile({"prod", "homologacao"})
+@Profile("prod")
 @ConditionalOnProperty(name = "amorif.automaticas.enabled", havingValue = "true", matchIfMissing = true)
 public class PontuacaoAutomaticaScheduler {
     private static final Logger log = LoggerFactory.getLogger(PontuacaoAutomaticaScheduler.class);

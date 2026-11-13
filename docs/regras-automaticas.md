@@ -38,7 +38,7 @@ bloqueada para impedir que uma nova execução recrie um registro excluído.
   Uma trava pessimista no ano aberto serializa disparos entre instâncias e a
   rota administrativa. Uma trava na turma, também adotada pelo lançamento manual,
   protege o contador da chave composta de pontuação.
-- `PontuacaoAutomaticaScheduler`: disparo mensal no perfil `prod`; o perfil `homologacao` permite testar a mesma rotina com cron próprio.
+- `PontuacaoAutomaticaScheduler`: disparo mensal apenas no perfil `prod`.
 - A autoria é o usuário técnico `!sistema-regras-automaticas`, criado na primeira
   execução com o perfil existente `ROLE_SISTEMA`. Não é necessário simular login
   no SecurityContext. Os logs administrativos identificam quem pediu a execução.
@@ -114,14 +114,8 @@ reprocessamento, com acesso abaixo da descrição da Área do Mago e link de ret
 
 As automáticas aparecem com “Automática · Somente consulta”, sem botões de
 edição ou ativação/desativação. O tipo automático não aparece na criação de
-regras. O arquivo `ops/issue-5-frontend.patch` contém esse ajuste e seus testes,
-para o repositório `com-amor-if-frontend`:
-
-```bash
-git apply --check /caminho/com-amor-if-backend/ops/issue-5-frontend.patch
-git apply /caminho/com-amor-if-backend/ops/issue-5-frontend.patch
-npm test -- --runTestsByPath app/wizard-area/__tests__/AutomaticRules.test.js app/wizard-area/__tests__/AutomaticExecutions.test.js
-```
+regras. A implementação e os testes estão no repositório
+[com-amor-if-frontend](https://github.com/IFRN-Campus-Lajes/com-amor-if-frontend/pull/34).
 
 O histórico usa cartões em telas abaixo de 768 px e tabela nas demais.
 Formulário, controles de toque, paginação e navegação foram validados nas
@@ -136,20 +130,11 @@ bimestre extra, pendências/anulações, impeditivas, preservação de bônus,
 repetição, versões históricas, chamadas simultâneas, rollback e reprocessamento,
 além dos bloqueios administrativos e do disparo mensal. A integração usa H2 em
 modo PostgreSQL, incluindo travas reais e transações independentes concorrentes.
-A mesma suíte pode rodar em PostgreSQL 16 real com Docker Desktop, sem acessar
-bancos existentes:
-
-```bash
-bash scripts/test-postgres.sh
-```
-
-O script cria um container exclusivo com porta local dinâmica, executa os 15
-cenários de integração e verifica o DDL da migração V4 após o create-drop do
-Hibernate. O container e seus dados são removidos ao terminar, inclusive em caso
-de falha. Requer Docker e o JDK usado pelo projeto. A execução padrão de
-`bash mvnw test` continua usando H2. As propriedades `test.database.*` permitem
-selecionar o banco da suíte de integração; ela recria o esquema e deve usar
-**somente banco descartável**.
+A suíte também foi validada em PostgreSQL 16 real. As propriedades
+`test.database.url`, `test.database.driver`, `test.database.username`,
+`test.database.password` e `test.database.dialect` permitem selecionar o banco
+da integração. A suíte usa `create-drop`: execute somente em banco descartável.
+A execução padrão de `bash mvnw test` continua usando H2.
 
 Antes de publicar, conferir os aliases das regras herdadas e validar o
 reprocessamento no ambiente de homologação.

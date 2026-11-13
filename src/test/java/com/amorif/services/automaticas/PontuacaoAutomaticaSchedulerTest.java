@@ -20,7 +20,7 @@ class PontuacaoAutomaticaSchedulerTest {
                     context.registerBean(ExecucaoAutomaticaService.class, () -> mock(ExecucaoAutomaticaService.class));
                     context.register(PontuacaoAutomaticaScheduler.class);
                     context.refresh();
-                    boolean esperado = habilitado && List.of("prod", "homologacao").contains(perfil);
+                    boolean esperado = habilitado && perfil.equals("prod");
                     assertEquals(esperado, !context.getBeansOfType(PontuacaoAutomaticaScheduler.class).isEmpty());
                     if (esperado) assertEquals(1, context.getBean(
                         org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor.class)
@@ -30,13 +30,13 @@ class PontuacaoAutomaticaSchedulerTest {
         }
     }
 
-    @Test void intervaloDeHomologacaoNaoAlteraPadraoMensalDeProducao() {
-        for (String perfil : List.of("prod", "homologacao")) {
+    @Test void cronConfiguravelPreservaPadraoMensalDeProducao() {
+        for (boolean personalizado : List.of(false, true)) {
             try (var context = new org.springframework.context.annotation.AnnotationConfigApplicationContext()) {
-                context.getEnvironment().setActiveProfiles(perfil);
-                if (perfil.equals("homologacao")) {
+                context.getEnvironment().setActiveProfiles("prod");
+                if (personalizado) {
                     context.getEnvironment().getPropertySources().addFirst(
-                        new org.springframework.core.env.MapPropertySource("homologacao",
+                        new org.springframework.core.env.MapPropertySource("cron-teste",
                             java.util.Map.of("amorif.automaticas.cron", "0 * * * * *")));
                 }
                 context.registerBean(ExecucaoAutomaticaService.class, () -> mock(ExecucaoAutomaticaService.class));
@@ -45,7 +45,7 @@ class PontuacaoAutomaticaSchedulerTest {
                 var tasks = context.getBean(org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor.class)
                     .getScheduledTasks();
                 var cron = (org.springframework.scheduling.config.CronTask) tasks.iterator().next().getTask();
-                assertEquals(perfil.equals("prod") ? "0 0 3 1 * *" : "0 * * * * *", cron.getExpression());
+                assertEquals(personalizado ? "0 * * * * *" : "0 0 3 1 * *", cron.getExpression());
             }
         }
     }
