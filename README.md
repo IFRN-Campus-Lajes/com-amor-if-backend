@@ -92,6 +92,11 @@ docker run --rm -p 8080:8080 --env-file .env com-amor-if-backend
 Enquanto não houver CRUD administrativo, novas regras e alterações no catálogo
 devem seguir o [plano de gestão de regras sem CRUD](docs/PLANO_GESTAO_REGRAS_SEM_CRUD.md).
 
+## Regras automáticas
+
+Os bônus bimestrais são apurados mensalmente pelo backend em produção, sem cron
+na VM. Consulte [comportamento, configuração e reprocessamento](docs/regras-automaticas.md).
+
 ## Projetos relacionados
 
 - Frontend: [IFRN-Campus-Lajes/com-amor-if-frontend](https://github.com/IFRN-Campus-Lajes/com-amor-if-frontend)

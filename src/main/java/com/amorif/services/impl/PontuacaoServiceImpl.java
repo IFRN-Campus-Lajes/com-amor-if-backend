@@ -1,7 +1,6 @@
 package com.amorif.services.impl;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -51,10 +50,12 @@ import com.amorif.repository.RegraRepository;
 import com.amorif.repository.TurmaRepository;
 import com.amorif.repository.UserRepository;
 import com.amorif.services.PontuacaoService;
+import com.amorif.services.automaticas.ExecucaoAutomaticaService;
 
 @Service
 public class PontuacaoServiceImpl implements PontuacaoService {
 
+	private final ExecucaoAutomaticaService automaticas;
 	private PontuacaoRepository pontuacaoRepository;
 	private TurmaRepository turmaRepository;
 	private RegraRepository regraRepository;
@@ -64,7 +65,9 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 
 	public PontuacaoServiceImpl(PontuacaoRepository pontuacaoRepository, TurmaRepository turmaRepository,
 			RegraRepository regraRepository, AnoLetivoRepository anoLetivoRepository, UserRepository userRepository,
-			OlimpiadaRepository olimpiadaRepository) {
+			OlimpiadaRepository olimpiadaRepository,
+            ExecucaoAutomaticaService automaticas) {
+        this.automaticas = automaticas;
 		this.pontuacaoRepository = pontuacaoRepository;
 		this.turmaRepository = turmaRepository;
 		this.regraRepository = regraRepository;
@@ -162,60 +165,10 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 		return Collections.emptyList();		
 	}
 
-	@Override
-	public List<PontuacaoDtoResponse> throwAutoPoints(PontuacaoDtoRequest dtoRequest) {
-		AnoLetivo anoAtual = requireOpenSchoolYear();
-		List<PontuacaoDtoResponse> pontuacoes = new ArrayList<>();
-
-		// IDs das regras de qualificação
-		Long regraLimpezaExcelenteId = 16L;
-		Long regraOrdenacaoExcelenteId = 10L;
-
-		// IDs das regras conflitantes
-		List<Long> regrasLimpezaConflitantes = Arrays.asList(13L, 14L, 15L, 17L, 18L);
-		List<Long> regrasOrdenacaoConflitantes = Arrays.asList(7L, 8L, 9L, 12L, 11L);
-
-		// IDs das regras automáticas
-		Long regraBonusOrdenacaoId = 11L;
-		Long regraBonusLimpezaId = 18L;
-
-		// Recuperando as regras automáticas
-		Regra regraBonusOrdenacao = regraRepository.findById(regraBonusOrdenacaoId).orElseThrow(
-				() -> new RuleNotFoundException("Regra com ID " + regraBonusOrdenacaoId + " não encontrada"));
-		Regra regraBonusLimpeza = regraRepository.findById(regraBonusLimpezaId).orElseThrow(
-				() -> new RuleNotFoundException("Regra com ID " + regraBonusLimpezaId + " não encontrada"));
-
-		// Verificar as turmas qualificadas para limpeza e ordenação excelentes
-		List<Turma> turmasLimpezaExcelente = turmaRepository.findTurmasQualificadasParaBonus(regraLimpezaExcelenteId,
-				regrasLimpezaConflitantes, dtoRequest.getBimestre(), anoAtual);
-		List<Turma> turmasOrdenacaoExcelente = turmaRepository.findTurmasQualificadasParaBonus(
-				regraOrdenacaoExcelenteId, regrasOrdenacaoConflitantes, dtoRequest.getBimestre(), anoAtual);
-
-		// Lançar pontuações para as turmas qualificadas
-		pontuacoes.addAll(lancarPontuacoesAutomaticas(turmasLimpezaExcelente, regraBonusLimpeza, dtoRequest, anoAtual));
-		pontuacoes.addAll(lancarPontuacoesAutomaticas(turmasOrdenacaoExcelente, regraBonusOrdenacao, dtoRequest, anoAtual));
-
-		return pontuacoes;
-	}
-
-	private List<PontuacaoDtoResponse> lancarPontuacoesAutomaticas(List<Turma> turmasQualificadas, Regra regraBonus,
-			PontuacaoDtoRequest dtoRequest, AnoLetivo anoAtual) {
-		List<PontuacaoDtoResponse> responses = new ArrayList<>();
-		for (Turma turma : turmasQualificadas) {
-			// Preenchendo os dados para lançamento de pontos
-			dtoRequest.setIdTurma(turma.getId());
-			dtoRequest.setIdRegra(regraBonus.getId());
-			dtoRequest.setPontos(regraBonus.getValorMinimo());
-			dtoRequest.setOperacao(regraBonus.getOperacao());
-			dtoRequest.setMotivacao(regraBonus.getSenso().getDescricao() + " " + regraBonus.getDescricao());
-
-			// Lançando os pontos para a turma
-			PontuacaoDtoResponse response = throwPointsForOne(dtoRequest, anoAtual, null);
-			responses.add(response);
-		}
-
-		return responses;
-	}
+    @Override
+    public List<PontuacaoDtoResponse> throwAutoPoints(PontuacaoDtoRequest request) {
+        return automaticas.processar(request.getBimestre()).stream().map(this::dtoFromPontuacao).toList();
+    }
 
 	@Override
 	@Transactional
@@ -224,13 +177,16 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 		List<PontuacaoDtoResponse> pontuacoes = new ArrayList<PontuacaoDtoResponse>();
 		Regra regra = this.regraRepository.getReferenceById(dtoRequest.getIdRegra());
 		TipoRegra tipoRegra = regra.getTipoRegra();
+        if (tipoRegra.isAutomatico()) throw new InvalidArgumentException(
+                "Utilize o reprocessamento administrativo para regras automáticas.");
 
 		if (tipoRegra.isPorTurno()) {
 
 			Integer turno = dtoRequest.getTurno();
 
 			if (turno != null && turno >= 0 && turno < TurnoEnum.values().length) {
-				List<Turma> turmas = turmaRepository.findAllByTurnoAndAnoLetivo(turno, anoAtual);
+				List<Turma> turmas = turmaRepository.findAllByTurnoAndAnoLetivo(turno, anoAtual).stream()
+                        .sorted(java.util.Comparator.comparing(Turma::getId)).toList();
 				if (turmas.isEmpty()) {
 					throw new InvalidTurnException(
 							"Não há turmas cadastradas para o turno selecionado no ano letivo aberto.");
@@ -254,7 +210,8 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 
 	private PontuacaoDtoResponse throwPointsForOne(PontuacaoDtoRequest dtoRequest, AnoLetivo anoAtual,
 			UUID grupoLancamentoId) {
-		Turma turma = this.turmaRepository.getReferenceById(dtoRequest.getIdTurma());
+		Turma turma = this.turmaRepository.findByIdForUpdate(dtoRequest.getIdTurma())
+                .orElseThrow(() -> new InvalidArgumentException("Turma não encontrada."));
 		Regra regra = this.regraRepository.getReferenceById(dtoRequest.getIdRegra());
 
 		if (turma != null && regra != null && anoAtual != null) {
@@ -304,6 +261,8 @@ public class PontuacaoServiceImpl implements PontuacaoService {
 			throw new PointsNotFoundException("Pontuação não encontrada");
 		}
 
+        if (pontuacao.getRegra().getTipoRegra().isAutomatico()) throw new InvalidArgumentException(
+                "Bônus automáticos devem ser anulados, não excluídos.");
 		ensureSchoolYearIsOpen(pontuacao.getAnoLetivo());
 
 		// Obtém o usuário logado

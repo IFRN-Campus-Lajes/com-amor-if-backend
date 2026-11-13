@@ -13,6 +13,10 @@ import com.amorif.entities.Turma;
  * @author osailton 
  */
 public interface TurmaRepository extends JpaRepository<Turma, Long> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select t from Turma t where t.id = :id")
+    java.util.Optional<Turma> findByIdForUpdate(@Param("id") Long id);
+
 	
 	List<Turma> findAllByAnoLetivo(AnoLetivo anoLetivo);
 	
@@ -20,24 +24,4 @@ public interface TurmaRepository extends JpaRepository<Turma, Long> {
 
 	List<Turma> findAllByTurnoAndAnoLetivo(Integer turno, AnoLetivo anoLetivo);
 	
-	@Query("SELECT t FROM Turma t " +
-		       "JOIN Pontuacao p ON p.turma.id = t.id " +
-		       "WHERE p.bimestre = :bimestre " +
-		       "AND p.anoLetivo = :anoLetivo " +
-		       "AND p.regra.id = :regraId " +
-		       "AND NOT EXISTS (" +
-		       "  SELECT 1 FROM Pontuacao p2 " +
-		       "  WHERE p2.turma.id = t.id " +
-		       "  AND p2.bimestre = :bimestre " +
-		       "  AND p2.regra.id IN (:outrasRegrasIds)" +
-		       "  AND p2.anulado = false" +
-		       ") " +
-		       "GROUP BY t.id " +
-		       "HAVING COUNT(p) > 0")
-		List<Turma> findTurmasQualificadasParaBonus(@Param("regraId") Long regraId, 
-		                                            @Param("outrasRegrasIds") List<Long> outrasRegrasIds, 
-		                                            @Param("bimestre") Integer bimestre,
-		                                            @Param("anoLetivo") AnoLetivo anoLetivo);
-
-
 }

@@ -70,6 +70,7 @@ public class RegraAdminServiceImpl implements RegraAdminService {
     public RegraAdminDtoResponse atualizar(Long id, RegraAdminDtoRequest request) {
         Regra atual = regraRepository.findById(id)
                 .orElseThrow(() -> new RuleNotFoundException("Regra não encontrada."));
+        impedirAlteracaoAutomatica(atual);
         validarVersaoAtual(atual);
         Regra destino = atual;
         if (pontuacaoRepository.existsByRegra_Id(id)) {
@@ -90,6 +91,7 @@ public class RegraAdminServiceImpl implements RegraAdminService {
     public RegraAdminDtoResponse alterarStatus(Long id, boolean ativo) {
         Regra regra = regraRepository.findById(id)
                 .orElseThrow(() -> new RuleNotFoundException("Regra não encontrada."));
+        impedirAlteracaoAutomatica(regra);
         validarVersaoAtual(regra);
         regra.setAtivo(ativo);
         regra.setAtualizadoPor(usuarioAtual());
@@ -135,6 +137,8 @@ public class RegraAdminServiceImpl implements RegraAdminService {
         if (!senso.isAtivo()) throw new InvalidArgumentException("Selecione um senso ativo.");
         TipoRegra tipo = tipoRegraRepository.findById(request.tipoRegraId())
                 .orElseThrow(() -> new InvalidArgumentException("Tipo de regra inválido."));
+        if (tipo.isAutomatico()) throw new InvalidArgumentException(
+                "Regras automáticas são somente para consulta; suas condições são mantidas no código.");
         int maximoInformado = request.valorMaximo() == null ? request.valorMinimo() : request.valorMaximo();
         int maximo = tipo.isFixo() ? request.valorMinimo()
                 : Math.max(request.valorMinimo(), maximoInformado);
@@ -166,6 +170,11 @@ public class RegraAdminServiceImpl implements RegraAdminService {
         regra.setRoles(roles);
         regra.setAtivo(request.ativo() == null || request.ativo());
         return regra;
+    }
+
+    private void impedirAlteracaoAutomatica(Regra regra) {
+        if (regra.getTipoRegra().isAutomatico()) throw new InvalidArgumentException(
+                "Regras automáticas são somente para consulta.");
     }
 
     private String textoObrigatorio(String valor, String mensagem) {

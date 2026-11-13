@@ -21,6 +21,7 @@ import com.amorif.services.PontuacaoService;
 @RestController
 @RequestMapping("/api/pontuacao")
 public class PointsController {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PointsController.class);
 	
 	private PontuacaoService pontuacaoService;
 	
@@ -65,7 +66,17 @@ public class PointsController {
 	
 	@PostMapping("lancarPontosAutomaticos")
 	public ResponseEntity<List<PontuacaoDtoResponse>> throwAutoPoints(@RequestBody PontuacaoDtoRequest request) {
-		return ResponseEntity.ok().body(this.pontuacaoService.throwAutoPoints(request));
+		String usuario = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+        try {
+            List<PontuacaoDtoResponse> criadas = this.pontuacaoService.throwAutoPoints(request);
+            log.info("BONUS confirmado | origem=administrativa usuario={} bimestre={} criados={}",
+                    usuario, request.getBimestre(), criadas.size());
+            return ResponseEntity.ok().body(criadas);
+        } catch (RuntimeException ex) {
+            log.error("BONUS falha | origem=administrativa usuario={} bimestre={}", usuario, request.getBimestre(), ex);
+            throw ex;
+        }
 	}
 	
 	@PostMapping("deletarPontuacao")
